@@ -1,0 +1,6 @@
+{
+  "name": "NetsRow ERP — Nómina DO",
+  "description": "Prototipo navegable de períodos mensuales, empleados, novedades y revisión de nómina TSS/ISR para NetsRow ERP.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
