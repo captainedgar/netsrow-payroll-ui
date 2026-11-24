@@ -14,10 +14,29 @@ export type ScreenId =
   | 'sales_ar'
   | 'customers'
   | 'cashbox'
+  | 'cashbox_shift'
+  | 'cashbox_movements'
+  | 'cashbox_closing'
   | 'inventory'
+  | 'inventory_stock'
+  | 'inventory_alerts'
+  | 'inventory_movements'
   | 'catalog'
+  | 'catalog_products'
+  | 'catalog_categories'
+  | 'catalog_brands'
+  | 'catalog_units'
+  | 'catalog_pricelists'
   | 'internal_docs'
+  | 'purchases_ap'
   | 'accounting'
+  | 'accounting_accounts'
+  | 'accounting_periods'
+  | 'accounting_journal'
+  | 'accounting_ledger'
+  | 'accounting_trial_balance'
+  | 'accounting_reconciliation'
+  | 'banks_treasury'
   | 'business'
   | 'company'
   | 'branches'
@@ -246,6 +265,7 @@ export interface PayrollBootstrapPayload {
   periods: PayrollPeriod[];
   employees: Employee[];
   novelties: PayrollNovelty[];
+  erpState?: import('./erp').ErpDemoState;
 }
 
 /**
@@ -262,4 +282,8 @@ export interface PayrollApiClient {
   runSimulation(periodId: string, actorName: string): Promise<PayrollPeriod>;
   runStatutoryCalculation(periodId: string, actorName: string): Promise<PayrollPeriod>;
   approvePayrollRun(periodId: string, runId: string, actorName: string): Promise<PayrollPeriod>;
+  saveErpState?(state: import('./erp').ErpDemoState): Promise<import('./erp').ErpDemoState>;
+  resetDemoWorkspace?(): Promise<PayrollBootstrapPayload>;
 }
+
+export * from './erp';

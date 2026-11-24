@@ -1,9 +1,11 @@
+import { createSeedErpState } from '../data/erpSeed';
 import {
   buildRunObject,
   createSeedPeriods,
   SEED_EMPLOYEES,
   SEED_NOVELTIES,
 } from '../data/mockSeed';
+import { ErpDemoState } from '../types/erp';
 import {
   CreateNoveltyInput,
   Employee,
@@ -13,6 +15,15 @@ import {
   PayrollPeriod,
   UpdateNoveltyInput,
 } from '../types/payroll';
+
+const STORAGE_KEY = 'netsrow_erp_demo_v1';
+
+interface PersistedWorkspace {
+  periods: PayrollPeriod[];
+  employees: Employee[];
+  novelties: PayrollNovelty[];
+  erpState: ErpDemoState;
+}
 
 function formatTimestampNow(): string {
   const now = new Date();
@@ -32,29 +43,112 @@ function clone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
 }
 
+function buildFreshSeed(): PersistedWorkspace {
+  return {
+    periods: createSeedPeriods(),
+    employees: clone(SEED_EMPLOYEES),
+    novelties: clone(SEED_NOVELTIES),
+    erpState: createSeedErpState(),
+  };
+}
+
+function loadFromStorage(): PersistedWorkspace | null {
+  if (typeof window === 'undefined' || !window.localStorage) return null;
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<PersistedWorkspace>;
+    if (
+      Array.isArray(parsed.periods) &&
+      Array.isArray(parsed.employees) &&
+      Array.isArray(parsed.novelties) &&
+      parsed.erpState &&
+      Array.isArray(parsed.erpState.products)
+    ) {
+      return parsed as PersistedWorkspace;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function persistToStorage(data: PersistedWorkspace): void {
+  if (typeof window === 'undefined' || !window.localStorage) return;
+  try {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch {
+    // Ignore storage quota issues in constrained environments
+  }
+}
+
 /**
- * Isolated simulated backend client for prototype evaluation.
- * Replace this implementation with NetsRow's HTTP client in apps/web.
+ * Isolated simulated backend client with localStorage persistence for demo evaluation.
+ * Replace this implementation with NetsRow's HTTP client in ERPSYSTEM/apps/web.
  */
 export class MockPayrollClient implements PayrollApiClient {
   private periods: PayrollPeriod[];
   private employees: Employee[];
   private novelties: PayrollNovelty[];
+  private erpState: ErpDemoState;
   private latencyMs: number;
 
-  constructor(latencyMs = 200) {
-    this.periods = createSeedPeriods();
-    this.employees = clone(SEED_EMPLOYEES);
-    this.novelties = clone(SEED_NOVELTIES);
+  constructor(latencyMs = 120) {
+    const saved = loadFromStorage();
+    const initial = saved ?? buildFreshSeed();
+    this.periods = initial.periods;
+    this.employees = initial.employees;
+    this.novelties = initial.novelties;
+    this.erpState = initial.erpState;
     this.latencyMs = latencyMs;
   }
 
+  private saveSnapshot() {
+    persistToStorage({
+      periods: this.periods,
+      employees: this.employees,
+      novelties: this.novelties,
+      erpState: this.erpState,
+    });
+  }
+
   async fetchWorkspaceData(): Promise<PayrollBootstrapPayload> {
-    await delay(Math.min(this.latencyMs, 120));
+    await delay(Math.min(this.latencyMs, 100));
+    const saved = loadFromStorage();
+    if (saved) {
+      this.periods = saved.periods;
+      this.employees = saved.employees;
+      this.novelties = saved.novelties;
+      this.erpState = saved.erpState;
+    }
     return {
       periods: clone(this.periods),
       employees: clone(this.employees),
       novelties: clone(this.novelties),
+      erpState: clone(this.erpState),
+    };
+  }
+
+  async saveErpState(nextState: ErpDemoState): Promise<ErpDemoState> {
+    await delay(Math.min(this.latencyMs, 60));
+    this.erpState = clone(nextState);
+    this.saveSnapshot();
+    return clone(this.erpState);
+  }
+
+  async resetDemoWorkspace(): Promise<PayrollBootstrapPayload> {
+    await delay(Math.min(this.latencyMs, 100));
+    const fresh = buildFreshSeed();
+    this.periods = fresh.periods;
+    this.employees = fresh.employees;
+    this.novelties = fresh.novelties;
+    this.erpState = fresh.erpState;
+    this.saveSnapshot();
+    return {
+      periods: clone(this.periods),
+      employees: clone(this.employees),
+      novelties: clone(this.novelties),
+      erpState: clone(this.erpState),
     };
   }
 
@@ -71,6 +165,7 @@ export class MockPayrollClient implements PayrollApiClient {
       ...input,
     };
     this.novelties = [created, ...this.novelties];
+    this.saveSnapshot();
     return clone(created);
   }
 
@@ -96,6 +191,7 @@ export class MockPayrollClient implements PayrollApiClient {
     };
 
     this.novelties = this.novelties.map((n) => (n.id === input.id ? updated : n));
+    this.saveSnapshot();
     return clone(updated);
   }
 
@@ -106,6 +202,7 @@ export class MockPayrollClient implements PayrollApiClient {
       throw new Error('Novelties can only be deleted when period is in Draft');
     }
     this.novelties = this.novelties.filter((n) => n.id !== noveltyId);
+    this.saveSnapshot();
   }
 
   async submitPeriodForReview(periodId: string): Promise<PayrollPeriod> {
@@ -116,6 +213,7 @@ export class MockPayrollClient implements PayrollApiClient {
       throw new Error('Only Draft periods can be sent for review');
     }
     period.status = 'IN_REVIEW';
+    this.saveSnapshot();
     return clone(period);
   }
 
@@ -127,11 +225,12 @@ export class MockPayrollClient implements PayrollApiClient {
       throw new Error('Only periods In Review can be returned to Draft');
     }
     period.status = 'DRAFT';
+    this.saveSnapshot();
     return clone(period);
   }
 
   async runSimulation(periodId: string, actorName: string): Promise<PayrollPeriod> {
-    await delay(this.latencyMs + 140);
+    await delay(this.latencyMs + 100);
     const period = this.periods.find((p) => p.id === periodId);
     if (!period) throw new Error('Period not found');
     if (period.status !== 'IN_REVIEW') {
@@ -165,6 +264,7 @@ export class MockPayrollClient implements PayrollApiClient {
 
     period.runs = [newRun, ...markedOldRuns];
     period.currentRunId = newRun.id;
+    this.saveSnapshot();
     return clone(period);
   }
 
@@ -172,7 +272,7 @@ export class MockPayrollClient implements PayrollApiClient {
     periodId: string,
     actorName: string
   ): Promise<PayrollPeriod> {
-    await delay(this.latencyMs + 180);
+    await delay(this.latencyMs + 120);
     const period = this.periods.find((p) => p.id === periodId);
     if (!period) throw new Error('Period not found');
     if (period.status !== 'IN_REVIEW') {
@@ -211,6 +311,7 @@ export class MockPayrollClient implements PayrollApiClient {
 
     period.runs = [newRun, ...markedOldRuns];
     period.currentRunId = newRun.id;
+    this.saveSnapshot();
     return clone(period);
   }
 
@@ -219,7 +320,7 @@ export class MockPayrollClient implements PayrollApiClient {
     runId: string,
     actorName: string
   ): Promise<PayrollPeriod> {
-    await delay(this.latencyMs + 120);
+    await delay(this.latencyMs + 100);
     const period = this.periods.find((p) => p.id === periodId);
     if (!period) throw new Error('Period not found');
     if (period.status !== 'IN_REVIEW') {
@@ -254,6 +355,7 @@ export class MockPayrollClient implements PayrollApiClient {
         : { ...r, isReadOnly: true }
     );
 
+    this.saveSnapshot();
     return clone(period);
   }
 }

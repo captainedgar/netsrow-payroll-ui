@@ -16,9 +16,12 @@ import {
   Home,
   Landmark,
   Layers,
+  Lock,
   MonitorSmartphone,
   ReceiptText,
+  RotateCcw,
   ShieldCheck,
+  ShoppingBag,
   Store,
   Tag,
   UserCog,
@@ -29,11 +32,16 @@ import {
 import { usePayrollWorkspace } from '../context/PayrollWorkspaceContext';
 import { ScreenId } from '../types/payroll';
 
-interface NavItem {
+interface NavSubItem {
+  id: ScreenId;
+  label: string;
+}
+
+interface NavGroupItem {
   id: ScreenId;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
-  hasSubmenuChevron?: boolean;
+  subItems?: NavSubItem[];
 }
 
 export const SidebarNav: React.FC = () => {
@@ -41,26 +49,87 @@ export const SidebarNav: React.FC = () => {
     activeScreen,
     activeReviewTab,
     setActiveScreen,
+    erpState,
+    resetDemoData,
+    isMutating,
     t,
+    locale,
+    enabledModules,
     isMobileNavOpen,
     setIsMobileNavOpen,
   } = usePayrollWorkspace();
 
-  const [collapsed, setCollapsed] = useState(false);
-  const [payrollExpanded, setPayrollExpanded] = useState(true);
+  const hasPayroll = enabledModules.includes('PAYROLL');
+  const hasAccounting = enabledModules.includes('ACCOUNTING');
 
-  const operationItems: NavItem[] = [
+  const [collapsed, setCollapsed] = useState(false);
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
+    cashbox: false,
+    inventory: false,
+    catalog: false,
+    accounting: false,
+    payroll: true,
+  });
+
+  const toggleGroup = (key: string) => {
+    setExpandedGroups((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const operationItems: NavGroupItem[] = [
     { id: 'overview', label: t.navigation.overview, icon: Home },
     { id: 'pos', label: t.navigation.pos, icon: MonitorSmartphone },
     { id: 'sales_ar', label: t.navigation.salesAr, icon: ReceiptText },
     { id: 'customers', label: t.navigation.customers, icon: Users },
-    { id: 'cashbox', label: t.navigation.cashbox, icon: Landmark, hasSubmenuChevron: true },
-    { id: 'inventory', label: t.navigation.inventory, icon: Boxes, hasSubmenuChevron: true },
-    { id: 'catalog', label: t.navigation.catalog, icon: Tag, hasSubmenuChevron: true },
+    {
+      id: 'cashbox',
+      label: t.navigation.cashbox,
+      icon: Landmark,
+      subItems: [
+        { id: 'cashbox_shift', label: t.navigation.cashboxShift },
+        { id: 'cashbox_movements', label: t.navigation.cashboxMovements },
+        { id: 'cashbox_closing', label: t.navigation.cashboxClosing },
+      ],
+    },
+    {
+      id: 'inventory',
+      label: t.navigation.inventory,
+      icon: Boxes,
+      subItems: [
+        { id: 'inventory_stock', label: t.navigation.inventoryStock },
+        { id: 'inventory_alerts', label: t.navigation.inventoryAlerts },
+        { id: 'inventory_movements', label: t.navigation.inventoryMovements },
+      ],
+    },
+    {
+      id: 'catalog',
+      label: t.navigation.catalog,
+      icon: Tag,
+      subItems: [
+        { id: 'catalog_products', label: t.navigation.catalogProducts },
+        { id: 'catalog_categories', label: t.navigation.catalogCategories },
+        { id: 'catalog_brands', label: t.navigation.catalogBrands },
+        { id: 'catalog_units', label: t.navigation.catalogUnits },
+        { id: 'catalog_pricelists', label: t.navigation.catalogPriceLists },
+      ],
+    },
+    { id: 'purchases_ap', label: t.navigation.purchasesAp, icon: ShoppingBag },
     { id: 'internal_docs', label: t.navigation.internalDocs, icon: FileText },
   ];
 
-  const payrollItems: NavItem[] = [
+  const accountingSubItems: NavSubItem[] = [
+    { id: 'accounting_accounts', label: t.navigation.accountingAccounts },
+    { id: 'accounting_periods', label: t.navigation.accountingPeriods },
+    { id: 'accounting_journal', label: t.navigation.accountingJournal },
+    { id: 'accounting_ledger', label: t.navigation.accountingLedger },
+    { id: 'accounting_trial_balance', label: t.navigation.accountingTrialBalance },
+    { id: 'accounting_reconciliation', label: t.navigation.accountingReconciliation },
+  ];
+
+  const payrollItems: {
+    id: ScreenId;
+    label: string;
+    icon: React.ComponentType<{ className?: string }>;
+  }[] = [
     { id: 'employees', label: t.navigation.employees, icon: Users },
     { id: 'periods', label: t.navigation.periods, icon: CalendarDays },
     { id: 'novelties', label: t.navigation.novelties, icon: Layers },
@@ -68,12 +137,16 @@ export const SidebarNav: React.FC = () => {
     { id: 'run_history', label: t.navigation.runHistory, icon: History },
   ];
 
-  const payrollConfigItems: NavItem[] = [
+  const payrollConfigItems: {
+    id: ScreenId;
+    label: string;
+    icon: React.ComponentType<{ className?: string }>;
+  }[] = [
     { id: 'work_risk', label: t.navigation.workRisk, icon: ShieldCheck },
     { id: 'concept_treatment', label: t.navigation.conceptTreatment, icon: Wallet },
   ];
 
-  const settingsItems: NavItem[] = [
+  const settingsItems: NavGroupItem[] = [
     { id: 'business', label: t.navigation.business, icon: Briefcase },
     { id: 'company', label: t.navigation.company, icon: Building },
     { id: 'branches', label: t.navigation.branches, icon: Store },
@@ -87,40 +160,118 @@ export const SidebarNav: React.FC = () => {
     if (id === 'payroll_review') {
       return activeScreen === 'payroll_review' && activeReviewTab !== 'history';
     }
+    if (id === 'cashbox') {
+      return (
+        activeScreen === 'cashbox' ||
+        activeScreen === 'cashbox_shift' ||
+        activeScreen === 'cashbox_movements' ||
+        activeScreen === 'cashbox_closing'
+      );
+    }
+    if (id === 'inventory') {
+      return (
+        activeScreen === 'inventory' ||
+        activeScreen === 'inventory_stock' ||
+        activeScreen === 'inventory_alerts' ||
+        activeScreen === 'inventory_movements'
+      );
+    }
+    if (id === 'catalog') {
+      return (
+        activeScreen === 'catalog' ||
+        activeScreen === 'catalog_products' ||
+        activeScreen === 'catalog_categories' ||
+        activeScreen === 'catalog_brands' ||
+        activeScreen === 'catalog_units' ||
+        activeScreen === 'catalog_pricelists'
+      );
+    }
+    if (id === 'accounting') {
+      return (
+        activeScreen === 'accounting' ||
+        activeScreen.startsWith('accounting_')
+      );
+    }
     return activeScreen === id;
   };
 
-  const renderFlatList = (items: NavItem[], compact: boolean, dense = false) => (
+  const renderGroupList = (items: NavGroupItem[], compact: boolean) => (
     <ul className="space-y-0.5">
       {items.map((item) => {
         const Icon = item.icon;
         const isActive = isNavItemActive(item.id);
+        const hasSubs = Boolean(item.subItems && item.subItems.length > 0);
+        const isExpanded = Boolean(expandedGroups[item.id]) || (hasSubs && isActive);
+
         return (
           <li key={item.id}>
-            <button
-              type="button"
-              onClick={() => setActiveScreen(item.id)}
-              title={compact ? item.label : undefined}
-              className={`w-full flex items-center justify-between gap-2 rounded px-3 ${
-                dense ? 'py-1.5 text-xs' : 'py-2 text-[13px]'
-              } font-medium transition-colors whitespace-nowrap ${
-                isActive
-                  ? 'bg-emerald-600 text-white'
-                  : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
-              } ${compact ? 'justify-center px-2' : ''}`}
-            >
-              <span className="flex items-center gap-2.5 min-w-0">
-                <Icon
-                  className={`w-4 h-4 shrink-0 ${
-                    isActive ? 'text-white' : 'text-slate-400'
-                  }`}
-                />
-                {!compact && <span className="truncate">{item.label}</span>}
-              </span>
-              {!compact && item.hasSubmenuChevron && (
-                <ChevronDown className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-              )}
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => {
+                  if (hasSubs && !compact) {
+                    toggleGroup(item.id);
+                    setActiveScreen(item.subItems![0].id);
+                  } else {
+                    setActiveScreen(item.id);
+                  }
+                }}
+                title={compact ? item.label : undefined}
+                className={`flex-1 flex items-center justify-between gap-2 rounded px-3 py-2 text-[13px] font-medium transition-colors whitespace-nowrap ${
+                  isActive && !hasSubs
+                    ? 'bg-emerald-600 text-white'
+                    : isActive && hasSubs
+                      ? 'bg-slate-800/90 text-emerald-300'
+                      : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                } ${compact ? 'justify-center px-2' : ''}`}
+              >
+                <span className="flex items-center gap-2.5 min-w-0">
+                  <Icon
+                    className={`w-4 h-4 shrink-0 ${
+                      isActive ? 'text-emerald-300' : 'text-slate-400'
+                    } ${isActive && !hasSubs ? '!text-white' : ''}`}
+                  />
+                  {!compact && (
+                    <span className="truncate flex items-center gap-1.5">
+                      <span>{item.label}</span>
+                      {item.id === 'accounting' && !hasAccounting && (
+                        <Lock className="w-3 h-3 text-amber-400 shrink-0" />
+                      )}
+                    </span>
+                  )}
+                </span>
+                {!compact && hasSubs && (
+                  <ChevronDown
+                    className={`w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform ${
+                      isExpanded ? 'rotate-180' : ''
+                    }`}
+                  />
+                )}
+              </button>
+            </div>
+
+            {!compact && hasSubs && isExpanded && item.subItems && (
+              <ul className="mt-0.5 ml-4 pl-2.5 border-l border-slate-800 space-y-0.5">
+                {item.subItems.map((sub) => {
+                  const subActive = activeScreen === sub.id;
+                  return (
+                    <li key={sub.id}>
+                      <button
+                        type="button"
+                        onClick={() => setActiveScreen(sub.id)}
+                        className={`w-full text-left rounded px-2.5 py-1.5 text-xs font-medium transition-colors truncate ${
+                          subActive
+                            ? 'bg-emerald-600 text-white'
+                            : 'text-slate-400 hover:bg-slate-800/70 hover:text-slate-100'
+                        }`}
+                      >
+                        {sub.label}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </li>
         );
       })}
@@ -131,11 +282,15 @@ export const SidebarNav: React.FC = () => {
     <div className="flex h-full flex-col bg-[#0F172A] text-slate-100 border-r border-slate-800 select-none">
       {/* Brand header */}
       <div
-        className={`flex items-center justify-between h-14 px-3.5 border-b border-slate-800 ${
+        className={`flex items-center justify-between h-14 px-3.5 border-b border-slate-800 shrink-0 ${
           compact ? 'justify-center' : ''
         }`}
       >
-        <div className="flex items-center gap-2.5 min-w-0">
+        <button
+          type="button"
+          onClick={() => setActiveScreen('overview')}
+          className="flex items-center gap-2.5 min-w-0 text-left"
+        >
           <div className="w-8 h-8 rounded bg-emerald-600 flex items-center justify-center text-white shrink-0">
             <Building2 className="w-4 h-4" />
           </div>
@@ -149,7 +304,7 @@ export const SidebarNav: React.FC = () => {
               </div>
             </div>
           )}
-        </div>
+        </button>
         {mobile && (
           <button
             type="button"
@@ -162,9 +317,9 @@ export const SidebarNav: React.FC = () => {
         )}
       </div>
 
-      {/* Entity Card matching Stitch screenshot */}
+      {/* Live Entity Card synced with Company Profile */}
       {!compact && (
-        <div className="px-3 py-2.5 border-b border-slate-800">
+        <div className="px-3 py-2.5 border-b border-slate-800 shrink-0">
           <button
             type="button"
             onClick={() => setActiveScreen('company')}
@@ -172,10 +327,10 @@ export const SidebarNav: React.FC = () => {
           >
             <div className="min-w-0">
               <div className="text-xs font-semibold text-white truncate">
-                {t.entityName}
+                {erpState.company.name}
               </div>
               <div className="font-mono-num text-[10px] text-slate-400 truncate">
-                {t.entityRnc}
+                RNC {erpState.company.rnc}
               </div>
             </div>
             <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
@@ -183,8 +338,8 @@ export const SidebarNav: React.FC = () => {
         </div>
       )}
 
-      {/* Navigation groups */}
-      <nav className="flex-1 overflow-y-auto px-2.5 py-3 space-y-5">
+      {/* Full-height independently scrollable nav */}
+      <nav className="flex-1 min-h-0 overflow-y-auto px-2.5 py-3 space-y-5">
         {/* OPERACIÓN */}
         <div>
           {!compact && (
@@ -192,65 +347,139 @@ export const SidebarNav: React.FC = () => {
               {t.navigation.operationSection}
             </div>
           )}
-          {renderFlatList(operationItems, compact)}
+          {renderGroupList(operationItems, compact)}
         </div>
 
-        {/* FINANZAS (Contabilidad + Nómina expanded group) */}
-        <div className="pt-2 border-t border-slate-800/80">
+        {/* FINANZAS */}
+        <div className="pt-2 border-t border-slate-800/80 space-y-1">
           {!compact && (
             <div className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
               {t.navigation.financeSection}
             </div>
           )}
-          {renderFlatList(
+
+          {/* Contabilidad expandable group */}
+          {renderGroupList(
             [
               {
                 id: 'accounting',
                 label: t.navigation.accounting,
                 icon: BookOpen,
-                hasSubmenuChevron: true,
+                subItems: accountingSubItems,
+              },
+              {
+                id: 'banks_treasury',
+                label: t.navigation.banksTreasury,
+                icon: Landmark,
               },
             ],
             compact
           )}
 
-          {/* Nómina Group */}
+          {/* Nómina expandable group */}
           <div className="mt-1">
             <button
               type="button"
               onClick={() => {
-                if (compact) {
+                if (!hasPayroll) {
+                  setActiveScreen('payroll_review');
+                } else if (compact) {
                   setActiveScreen('payroll_review');
                 } else {
-                  setPayrollExpanded((prev) => !prev);
+                  toggleGroup('payroll');
                 }
               }}
-              className={`w-full flex items-center justify-between gap-2 rounded px-3 py-2 text-[13px] font-semibold text-emerald-300 bg-emerald-950/50 border border-emerald-700/40 ${
-                compact ? 'justify-center px-2' : ''
-              }`}
+              className={`w-full flex items-center justify-between gap-2 rounded px-3 py-2 text-[13px] font-semibold border ${
+                hasPayroll
+                  ? 'text-emerald-300 bg-emerald-950/50 border-emerald-700/40'
+                  : 'text-slate-400 bg-slate-900/60 border-slate-800 hover:text-slate-200'
+              } ${compact ? 'justify-center px-2' : ''}`}
             >
               <span className="flex items-center gap-2.5 min-w-0">
-                <Wallet className="w-4 h-4 text-emerald-400 shrink-0" />
+                {hasPayroll ? (
+                  <Wallet className="w-4 h-4 text-emerald-400 shrink-0" />
+                ) : (
+                  <Lock className="w-4 h-4 text-amber-400 shrink-0" />
+                )}
                 {!compact && (
-                  <span className="truncate">{t.navigation.payrollGroup}</span>
+                  <span className="truncate flex items-center gap-1.5">
+                    <span>{t.navigation.payrollGroup}</span>
+                    {!hasPayroll && (
+                      <span className="text-[10px] font-semibold text-amber-400">
+                        · {locale === 'es' ? 'No incluido' : 'Locked'}
+                      </span>
+                    )}
+                  </span>
                 )}
               </span>
               {!compact &&
-                (payrollExpanded ? (
+                hasPayroll &&
+                (expandedGroups.payroll ? (
                   <ChevronUp className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                 ) : (
                   <ChevronDown className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                 ))}
             </button>
 
-            {!compact && payrollExpanded && (
+            {!compact && hasPayroll && expandedGroups.payroll && (
               <div className="mt-1 ml-2 pl-2 border-l border-slate-800 space-y-2">
-                {renderFlatList(payrollItems, false)}
+                <ul className="space-y-0.5">
+                  {payrollItems.map((item) => {
+                    const Icon = item.icon;
+                    const active = isNavItemActive(item.id);
+                    return (
+                      <li key={item.id}>
+                        <button
+                          type="button"
+                          onClick={() => setActiveScreen(item.id)}
+                          className={`w-full flex items-center gap-2.5 rounded px-3 py-2 text-[13px] font-medium transition-colors whitespace-nowrap ${
+                            active
+                              ? 'bg-emerald-600 text-white'
+                              : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                          }`}
+                        >
+                          <Icon
+                            className={`w-4 h-4 shrink-0 ${
+                              active ? 'text-white' : 'text-slate-400'
+                            }`}
+                          />
+                          <span className="truncate">{item.label}</span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+
                 <div className="pt-1.5">
                   <div className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
                     {t.navigation.payrollConfigSection}
                   </div>
-                  {renderFlatList(payrollConfigItems, false, true)}
+                  <ul className="space-y-0.5">
+                    {payrollConfigItems.map((item) => {
+                      const Icon = item.icon;
+                      const active = isNavItemActive(item.id);
+                      return (
+                        <li key={item.id}>
+                          <button
+                            type="button"
+                            onClick={() => setActiveScreen(item.id)}
+                            className={`w-full flex items-center gap-2.5 rounded px-3 py-1.5 text-xs font-medium transition-colors whitespace-nowrap ${
+                              active
+                                ? 'bg-emerald-600 text-white'
+                                : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                            }`}
+                          >
+                            <Icon
+                              className={`w-3.5 h-3.5 shrink-0 ${
+                                active ? 'text-white' : 'text-slate-400'
+                              }`}
+                            />
+                            <span className="truncate">{item.label}</span>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
                 </div>
               </div>
             )}
@@ -258,19 +487,32 @@ export const SidebarNav: React.FC = () => {
         </div>
 
         {/* CONFIGURACIÓN */}
-        <div className="pt-2 border-t border-slate-800/80">
+        <div className="pt-2 border-t border-slate-800/80 pb-3">
           {!compact && (
             <div className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
               {t.navigation.settingsSection}
             </div>
           )}
-          {renderFlatList(settingsItems, compact)}
+          {renderGroupList(settingsItems, compact)}
         </div>
       </nav>
 
-      {/* Desktop collapse toggle */}
-      {!mobile && (
-        <div className="p-2.5 border-t border-slate-800">
+      {/* Bottom controls: Reset demo + Collapse */}
+      <div className="p-2.5 border-t border-slate-800 space-y-1.5 shrink-0">
+        <button
+          type="button"
+          disabled={isMutating}
+          onClick={() => resetDemoData()}
+          title={t.topBar.resetDemoData}
+          className={`w-full flex items-center justify-center gap-2 rounded border border-slate-700/80 bg-slate-800/60 px-2.5 py-2 text-xs font-medium text-amber-300 hover:bg-slate-800 hover:text-amber-200 disabled:opacity-50 transition-colors ${
+            compact ? 'px-2' : ''
+          }`}
+        >
+          <RotateCcw className="w-3.5 h-3.5 shrink-0" />
+          {!compact && <span className="truncate">{t.topBar.resetDemoData}</span>}
+        </button>
+
+        {!mobile && (
           <button
             type="button"
             onClick={() => setCollapsed((prev) => !prev)}
@@ -290,8 +532,8 @@ export const SidebarNav: React.FC = () => {
               </>
             )}
           </button>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 
@@ -299,10 +541,10 @@ export const SidebarNav: React.FC = () => {
     <>
       <aside
         className={`hidden lg:block shrink-0 transition-all duration-200 ${
-          collapsed ? 'w-[68px]' : 'w-[252px]'
+          collapsed ? 'w-[68px]' : 'w-[258px]'
         }`}
       >
-        <div className="sticky top-0 h-screen">{sidebarContent(collapsed, false)}</div>
+        <div className="sticky top-0 h-[100dvh]">{sidebarContent(collapsed, false)}</div>
       </aside>
 
       {isMobileNavOpen && (
@@ -311,7 +553,7 @@ export const SidebarNav: React.FC = () => {
             className="fixed inset-0 bg-slate-950/60"
             onClick={() => setIsMobileNavOpen(false)}
           />
-          <aside className="relative z-10 w-[268px] max-w-[85vw] h-full">
+          <aside className="relative z-10 w-[274px] max-w-[85vw] h-[100dvh]">
             {sidebarContent(false, true)}
           </aside>
         </div>

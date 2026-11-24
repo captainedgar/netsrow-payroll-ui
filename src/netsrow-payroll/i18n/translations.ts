@@ -25,10 +25,29 @@ export interface Translations {
     salesAr: string;
     customers: string;
     cashbox: string;
+    cashboxShift: string;
+    cashboxMovements: string;
+    cashboxClosing: string;
     inventory: string;
+    inventoryStock: string;
+    inventoryAlerts: string;
+    inventoryMovements: string;
     catalog: string;
+    catalogProducts: string;
+    catalogCategories: string;
+    catalogBrands: string;
+    catalogUnits: string;
+    catalogPriceLists: string;
     internalDocs: string;
+    purchasesAp: string;
     accounting: string;
+    accountingAccounts: string;
+    accountingPeriods: string;
+    accountingJournal: string;
+    accountingLedger: string;
+    accountingTrialBalance: string;
+    accountingReconciliation: string;
+    banksTreasury: string;
     periods: string;
     employees: string;
     novelties: string;
@@ -46,6 +65,7 @@ export interface Translations {
   };
   topBar: {
     entityLabel: string;
+    branchLabel: string;
     activePeriodLabel: string;
     noPeriodSelected: string;
     demoControlBadge: string;
@@ -58,6 +78,10 @@ export interface Translations {
     themeLight: string;
     themeDark: string;
     openBreakdown: string;
+    resetDemoData: string;
+    demoOnlyTag: string;
+    contractReadyTag: string;
+    demoResetDone: string;
     simBannerPrefix: string;
     statutoryBannerPrefix: string;
     approvedBannerPrefix: string;
@@ -341,10 +365,29 @@ export const TRANSLATIONS: Record<Locale, Translations> = {
       salesAr: 'Ventas',
       customers: 'Clientes',
       cashbox: 'Caja',
+      cashboxShift: 'Turno y apertura',
+      cashboxMovements: 'Movimientos de caja',
+      cashboxClosing: 'Cierre de caja',
       inventory: 'Inventario',
+      inventoryStock: 'Existencias',
+      inventoryAlerts: 'Alertas de stock',
+      inventoryMovements: 'Movimientos y ajustes',
       catalog: 'Catálogo',
+      catalogProducts: 'Productos',
+      catalogCategories: 'Categorías',
+      catalogBrands: 'Marcas',
+      catalogUnits: 'Unidades de medida',
+      catalogPriceLists: 'Listas de precios',
       internalDocs: 'Documentos internos',
+      purchasesAp: 'Compras y CxP',
       accounting: 'Contabilidad',
+      accountingAccounts: 'Plan de cuentas',
+      accountingPeriods: 'Períodos contables',
+      accountingJournal: 'Diario general',
+      accountingLedger: 'Mayor general',
+      accountingTrialBalance: 'Balanza comprobación',
+      accountingReconciliation: 'Conciliación',
+      banksTreasury: 'Bancos y Tesorería',
       periods: 'Períodos',
       employees: 'Empleados',
       novelties: 'Novedades',
@@ -362,6 +405,7 @@ export const TRANSLATIONS: Record<Locale, Translations> = {
     },
     topBar: {
       entityLabel: 'Entidad',
+      branchLabel: 'Sucursal',
       activePeriodLabel: 'Período',
       noPeriodSelected: 'Sin período seleccionado',
       demoControlBadge: 'Control demo',
@@ -374,6 +418,10 @@ export const TRANSLATIONS: Record<Locale, Translations> = {
       themeLight: 'Claro',
       themeDark: 'Oscuro',
       openBreakdown: 'Desglose de nómina',
+      resetDemoData: 'Restablecer datos demo',
+      demoOnlyTag: 'Solo demo',
+      contractReadyTag: 'Contrato ERP',
+      demoResetDone: 'Datos de demostración restablecidos al estado inicial.',
       simBannerPrefix: 'SIMULACIÓN ACTIVA',
       statutoryBannerPrefix: 'REVISIÓN TSS E ISR',
       approvedBannerPrefix: 'NÓMINA APROBADA',
@@ -766,11 +814,30 @@ export const TRANSLATIONS: Record<Locale, Translations> = {
       pos: 'POS',
       salesAr: 'Sales',
       customers: 'Customers',
-      cashbox: 'Cashier',
+      cashbox: 'Cashbox',
+      cashboxShift: 'Shift & Opening',
+      cashboxMovements: 'Cash Movements',
+      cashboxClosing: 'Cash Closing',
       inventory: 'Inventory',
+      inventoryStock: 'Stock Levels',
+      inventoryAlerts: 'Stock Alerts',
+      inventoryMovements: 'Movements & Adj.',
       catalog: 'Catalog',
+      catalogProducts: 'Products',
+      catalogCategories: 'Categories',
+      catalogBrands: 'Brands',
+      catalogUnits: 'Units of Measure',
+      catalogPriceLists: 'Price Lists',
       internalDocs: 'Internal Docs',
+      purchasesAp: 'Purchases & AP',
       accounting: 'Accounting',
+      accountingAccounts: 'Chart of Accounts',
+      accountingPeriods: 'Accounting Periods',
+      accountingJournal: 'General Journal',
+      accountingLedger: 'General Ledger',
+      accountingTrialBalance: 'Trial Balance',
+      accountingReconciliation: 'Reconciliation',
+      banksTreasury: 'Banks & Treasury',
       periods: 'Periods',
       employees: 'Employees',
       novelties: 'Adjustments',
@@ -788,6 +855,7 @@ export const TRANSLATIONS: Record<Locale, Translations> = {
     },
     topBar: {
       entityLabel: 'Entity',
+      branchLabel: 'Branch',
       activePeriodLabel: 'Period',
       noPeriodSelected: 'No period selected',
       demoControlBadge: 'Demo control',
@@ -800,6 +868,10 @@ export const TRANSLATIONS: Record<Locale, Translations> = {
       themeLight: 'Light',
       themeDark: 'Dark',
       openBreakdown: 'Payroll Breakdown',
+      resetDemoData: 'Reset demo data',
+      demoOnlyTag: 'Demo only',
+      contractReadyTag: 'ERP Contract',
+      demoResetDone: 'Demo workspace data has been restored to initial state.',
       simBannerPrefix: 'ACTIVE SIMULATION',
       statutoryBannerPrefix: 'TSS & ISR REVIEW',
       approvedBannerPrefix: 'PAYROLL APPROVED',
