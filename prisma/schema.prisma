@@ -11,3 +11,37 @@ model CatalogSnapshot {
   key     String @id
   payload Json
 }
+
+model Company {
+  id       String    @id @default(uuid())
+  name     String
+  accounts Account[]
+  products Product[]
+}
+
+model Account {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  password    String
+  companyId   String
+  company     Company   @relation(fields: [companyId], references: [id])
+  sessions    Session[]
+}
+
+model Session {
+  digest    String   @id
+  accountId String
+  expiresAt DateTime
+  account   Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([expiresAt])
+}
+
+model Product {
+  id        String  @id @default(uuid())
+  name      String
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id])
+
+  @@index([companyId])
+}

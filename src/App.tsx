@@ -4,6 +4,7 @@
  */
 
 import { FoundationScreen } from './FoundationScreen';
+import { TenantAccessScreen } from './TenantAccessScreen';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   AccessRestrictedScreen,
@@ -213,6 +214,9 @@ function PreviewApp() {
 }
 
 export default function App() {
+  if (import.meta.env.DEV && window.location.pathname === '/acceso-tecnico') {
+    return <TenantAccessScreen />;
+  }
   if (import.meta.env.DEV && window.location.pathname === '/base-tecnica') {
     return <FoundationScreen />;
   }

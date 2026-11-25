@@ -3,6 +3,7 @@ import 'reflect-metadata';
 import { Controller, Get, Inject, Module, ServiceUnavailableException } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { PrismaClient } from '@prisma/client';
+import { TenantController } from './tenant.controller';
 
 @Controller('api')
 class FoundationController {
@@ -31,7 +32,7 @@ class FoundationController {
 const prisma = new PrismaClient();
 
 @Module({
-  controllers: [FoundationController],
+  controllers: [FoundationController, TenantController],
   providers: [{ provide: PrismaClient, useValue: prisma }],
 })
 class FoundationModule {}

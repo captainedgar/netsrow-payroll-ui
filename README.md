@@ -23,3 +23,26 @@ En otra terminal, ejecuta `npm run dev` y abre `http://localhost:3000/base-tecni
 API local: `http://127.0.0.1:3001/api/health` y `http://127.0.0.1:3001/api/demo/catalog`.
 
 Validación local: `npm run api:check`, `npm run lint` y `npm run build`. GitHub Actions ejecuta además las migraciones y comprueba el catálogo con una base PostgreSQL temporal.
+
+## Fase 2 · Acceso de prueba por empresa
+
+Si el puerto 3001 está ocupado, define `API_PORT=3002` en el `.env` local y
+reinicia la API y Vite. Ambos leen el mismo puerto. El proxy ya no requiere
+editar su destino a mano.
+
+Después de traer los cambios, ejecuta `npm run db:generate` y
+`npm run db:migrate` sobre tu base local. Para crear las dos empresas
+ficticias, en PowerShell ejecuta:
+
+```powershell
+$env:NETSROW_SEED_TEST_TENANTS = "true"
+npm run db:seed:tenants
+Remove-Item Env:NETSROW_SEED_TEST_TENANTS
+```
+
+Con la API y Vite iniciados, abre `/acceso-tecnico`. Las cuentas ficticias
+son `test-a@example.test` y `test-b@example.test`, ambas con contraseña
+`NetsRow-Local-2026`. Cierra sesión entre ambas pruebas. Los productos deben
+ser diferentes. Esta vista se habilita en desarrollo y el login comercial
+sigue funcionando en modo demo. El siguiente tramo cubre altas e invitaciones,
+sucursales, roles, Superadmin y habilitación de módulos.
