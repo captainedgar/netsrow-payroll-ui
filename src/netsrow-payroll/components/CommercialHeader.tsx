@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Menu, Moon, Sun, X } from 'lucide-react';
 import { useCommercial } from '../context/CommercialContext';
+import { NetsRowLogo } from './NetsRowLogo';
 
 export const CommercialHeader: React.FC = () => {
   const {
@@ -38,13 +39,14 @@ export const CommercialHeader: React.FC = () => {
   return (
     <header className="sticky top-0 z-40 border-b border-[var(--nr-border)] bg-[var(--nr-surface)]/95 backdrop-blur-sm nr-transition">
       <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4 sm:gap-8">
-        {/* Zone 1: Single-line brand wordmark */}
+        {/* Zone 1: Official NetsRow ERP logo */}
         <button
           type="button"
           onClick={() => handleLink('/')}
-          className="font-display text-lg font-bold tracking-tight text-[var(--nr-text)] whitespace-nowrap shrink-0 rounded-lg nr-focus-ring nr-transition"
+          aria-label="NetsRow ERP"
+          className="inline-flex items-center shrink-0 rounded-lg nr-focus-ring nr-transition"
         >
-          NetsRow ERP
+          <NetsRowLogo size="sm" surface="auto" />
         </button>
 
         {/* Zone 2: Clean single-line navigation links */}

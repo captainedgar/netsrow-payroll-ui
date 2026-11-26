@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Building2, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { NetsRowLogo } from '../components/NetsRowLogo';
 import { usePlatform } from '../context/PlatformContext';
 
 export const RegisterDemoScreen: React.FC = () => {
@@ -16,15 +17,10 @@ export const RegisterDemoScreen: React.FC = () => {
       }`}
     >
       <div className="w-full max-w-md rounded-2xl border border-[var(--nr-border)] bg-[var(--nr-surface)] p-6 sm:p-8 space-y-5 shadow-sm">
-        <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-[var(--nr-primary)] flex items-center justify-center text-white shrink-0">
-            <Building2 className="w-4 h-4" />
-          </div>
-          <div>
-            <div className="font-display text-base font-bold text-[var(--nr-text)]">NetsRow ERP</div>
-            <div className="text-[11px] font-semibold text-[var(--nr-warning)]">
-              {pt.auth.demoBanner}
-            </div>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <NetsRowLogo size="sm" surface="auto" />
+          <div className="text-[11px] font-semibold text-[var(--nr-warning)]">
+            {pt.auth.demoBanner}
           </div>
         </div>
 

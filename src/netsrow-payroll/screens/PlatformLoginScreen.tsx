@@ -1,6 +1,7 @@
 import React from 'react';
-import { ArrowLeft, Moon, Shield, Sun } from 'lucide-react';
+import { ArrowLeft, Moon, Sun } from 'lucide-react';
 import { AuthLoginForm } from '../components/AuthLoginForm';
+import { NetsRowLogo } from '../components/NetsRowLogo';
 import { usePlatform } from '../context/PlatformContext';
 
 export const PlatformLoginScreen: React.FC = () => {
@@ -22,17 +23,10 @@ export const PlatformLoginScreen: React.FC = () => {
       />
       {/* Sober operator top bar */}
       <header className="max-w-5xl w-full mx-auto flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-md bg-emerald-600 flex items-center justify-center text-white shrink-0">
-            <Shield className="w-4 h-4" />
-          </div>
-          <div>
-            <div className="font-display text-sm font-bold text-white">
-              {pt.platformNav.brandTitle}
-            </div>
-            <div className="text-[10px] font-semibold tracking-wider text-slate-400">
-              {pt.platformNav.brandSubtitle}
-            </div>
+        <div className="flex flex-wrap items-center gap-2.5">
+          <NetsRowLogo size="sm" surface="dark" />
+          <div className="text-[10px] font-semibold tracking-wider text-slate-400">
+            {pt.platformNav.brandSubtitle}
           </div>
         </div>
 

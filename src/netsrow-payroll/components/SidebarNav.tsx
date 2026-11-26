@@ -4,7 +4,6 @@ import {
   Boxes,
   Briefcase,
   Building,
-  Building2,
   CalendarDays,
   ChevronDown,
   ChevronLeft,
@@ -32,6 +31,7 @@ import {
 } from 'lucide-react';
 import { usePayrollWorkspace } from '../context/PayrollWorkspaceContext';
 import { ScreenId } from '../types/payroll';
+import { NetsRowLogo } from './NetsRowLogo';
 
 interface NavSubItem {
   id: ScreenId;
@@ -327,21 +327,14 @@ export const SidebarNav: React.FC = () => {
         <button
           type="button"
           onClick={() => setActiveScreen('overview')}
+          aria-label={t.brandName}
           className="nr-focus-ring flex items-center gap-2.5 min-w-0 text-left rounded-lg"
         >
-          <div className="w-8 h-8 rounded-lg bg-[#047857] flex items-center justify-center text-white shrink-0">
-            <Building2 className="w-4 h-4" />
-          </div>
-          {!compact && (
-            <div className="min-w-0">
-              <div className="font-display text-sm font-bold tracking-tight text-white truncate">
-                {t.brandName}
-              </div>
-              <div className="text-[10px] font-semibold tracking-wider text-slate-400 truncate">
-                {t.brandSubtitle}
-              </div>
-            </div>
-          )}
+          <NetsRowLogo
+            variant={compact ? 'mark' : 'full'}
+            size="sm"
+            surface="dark"
+          />
         </button>
         {mobile && (
           <button

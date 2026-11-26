@@ -635,7 +635,7 @@ export const LandingScreen: React.FC = () => {
                 </p>
               </div>
 
-              <div>
+              <div className="flex flex-wrap items-center gap-3">
                 <button
                   type="button"
                   onClick={() => openConfiguratorWithPreset('KEEP', 'E_INVOICING')}
@@ -643,6 +643,15 @@ export const LandingScreen: React.FC = () => {
                 >
                   <span>{ct.eInvoicingSection.cta}</span>
                   <ArrowRight className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigateTo('/login')}
+                  className="inline-flex items-center justify-center gap-2 h-12 px-5 rounded-xl border border-[var(--nr-border)] bg-[var(--nr-bg)] hover:border-[var(--nr-primary)] active:scale-[0.985] text-sm font-semibold text-[var(--nr-text)] nr-focus-ring nr-transition"
+                >
+                  <span>
+                    {locale === 'es' ? 'Probar e-CF en el ERP demo' : 'Try e-CF in ERP demo'}
+                  </span>
                 </button>
               </div>
             </ScrollReveal>

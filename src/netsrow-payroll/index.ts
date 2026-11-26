@@ -86,6 +86,7 @@ export {
   COMMERCIAL_MODULE_LABELS,
 } from './services/mockCommercialClient';
 export * from './context/CommercialContext';
+export { NetsRowLogo } from './components/NetsRowLogo';
 export { CommercialHeader } from './components/CommercialHeader';
 export { CommercialFooter } from './components/CommercialFooter';
 export { ScrollReveal } from './components/ScrollReveal';

@@ -9,11 +9,11 @@ import {
   Layers,
   LifeBuoy,
   RotateCcw,
-  Shield,
   X,
 } from 'lucide-react';
 import { usePlatform } from '../context/PlatformContext';
 import { PlatformScreenId } from '../types/platform';
+import { NetsRowLogo } from './NetsRowLogo';
 
 export interface PlatformSidebarProps {
   isMobileOpen: boolean;
@@ -85,20 +85,18 @@ export const PlatformSidebar: React.FC<PlatformSidebarProps> = ({
             setActivePlatformScreen('platform_overview');
             if (mobile) handleCloseWithFocus();
           }}
-          className="nr-focus-ring flex items-center gap-2.5 min-w-0 text-left rounded-lg"
+          aria-label={pt.platformNav.brandTitle}
+          className="nr-focus-ring flex items-center gap-2 min-w-0 text-left rounded-lg"
         >
-          <div className="w-8 h-8 rounded-lg bg-[#047857] flex items-center justify-center text-white shrink-0">
-            <Shield className="w-4 h-4" />
-          </div>
+          <NetsRowLogo
+            variant={compact ? 'mark' : 'full'}
+            size="sm"
+            surface="dark"
+          />
           {!compact && (
-            <div className="min-w-0">
-              <div className="font-display text-sm font-bold tracking-tight text-white truncate">
-                {pt.platformNav.brandTitle}
-              </div>
-              <div className="text-[10px] font-semibold tracking-wider text-slate-400 truncate">
-                {pt.platformNav.brandSubtitle}
-              </div>
-            </div>
+            <span className="text-[10px] font-semibold tracking-wider text-emerald-300 uppercase whitespace-nowrap">
+              Admin
+            </span>
           )}
         </button>
 

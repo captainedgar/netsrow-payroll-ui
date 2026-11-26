@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import {
   ArrowRight,
-  Building2,
   CheckCircle2,
   Moon,
   ShieldCheck,
   Sun,
 } from 'lucide-react';
 import { AuthLoginForm } from '../components/AuthLoginForm';
+import { NetsRowLogo } from '../components/NetsRowLogo';
 import { usePlatform } from '../context/PlatformContext';
 
 export const TenantLoginScreen: React.FC = () => {
@@ -39,9 +39,10 @@ export const TenantLoginScreen: React.FC = () => {
               <button
                 type="button"
                 onClick={() => navigateRoute('/')}
-                className="nr-focus-ring nr-transition font-semibold text-[var(--nr-text)] hover:text-[var(--nr-primary)] rounded"
+                aria-label="NetsRow ERP"
+                className="nr-focus-ring nr-transition inline-flex items-center rounded-lg"
               >
-                NetsRow ERP
+                <NetsRowLogo size="xs" surface="auto" />
               </button>
               <span aria-hidden="true">·</span>
               <span className="text-[var(--nr-warning)] font-semibold">
@@ -231,17 +232,10 @@ export const TenantLoginScreen: React.FC = () => {
                 'radial-gradient(circle, rgba(16,185,129,0.16) 0%, rgba(16,185,129,0) 70%)',
             }}
           />
-          <div className="relative flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white shrink-0">
-              <Building2 className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="font-display text-lg font-bold tracking-tight text-white">
-                NetsRow ERP
-              </div>
-              <div className="text-[11px] font-semibold tracking-wider text-slate-400">
-                ERP SUITE · REPÚBLICA DOMINICANA
-              </div>
+          <div className="relative flex flex-wrap items-center gap-3">
+            <NetsRowLogo size="sm" surface="dark" />
+            <div className="text-[11px] font-semibold tracking-wider text-slate-400">
+              ERP SUITE · REPÚBLICA DOMINICANA
             </div>
           </div>
 
