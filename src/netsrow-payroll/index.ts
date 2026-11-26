@@ -42,6 +42,8 @@ export { PlatformTopBar } from './components/PlatformTopBar';
 export { OverviewScreen } from './screens/OverviewScreen';
 export { PosScreen } from './screens/PosScreen';
 export { SalesScreen } from './screens/SalesScreen';
+export { ElectronicInvoicingScreen } from './screens/ElectronicInvoicingScreen';
+export { EcfRepresentacionImpresa } from './components/EcfRepresentacionImpresa';
 export { CustomersScreen } from './screens/CustomersScreen';
 export { CashboxScreen } from './screens/CashboxScreen';
 export { InventoryScreen } from './screens/InventoryScreen';
@@ -86,6 +88,7 @@ export {
 export * from './context/CommercialContext';
 export { CommercialHeader } from './components/CommercialHeader';
 export { CommercialFooter } from './components/CommercialFooter';
+export { ScrollReveal } from './components/ScrollReveal';
 export { SoftwarePreviewFrame } from './components/SoftwarePreviewFrame';
 export { QuoteSummaryPanel } from './components/QuoteSummaryPanel';
 export { QuoteRequestForm } from './components/QuoteRequestForm';

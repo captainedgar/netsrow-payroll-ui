@@ -168,123 +168,124 @@ export const PlansConfiguratorScreen: React.FC = () => {
           {/* Main Grid: Options (8 cols) + Sticky Live Summary (4 cols) */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             <div className="lg:col-span-8 space-y-6">
-              {/* STEP 1: Contract Mode */}
-              {configuratorStep === 1 && (
-                <section
-                  style={{ boxShadow: 'var(--nr-shadow-config)' }}
-                  className="rounded-[20px] border border-[var(--nr-border)] bg-[var(--nr-surface)] p-5 sm:p-7 space-y-6 nr-transition"
-                >
-                  <div className="space-y-1">
-                    <h2 className="font-display text-xl font-bold text-[var(--nr-text)]">
-                      {ct.configurator.step1Title}
-                    </h2>
-                    <p className="text-sm text-[var(--nr-text-secondary)]">
-                      {ct.configurator.step1Desc}
-                    </p>
-                  </div>
+              <div key={configuratorStep} className="nr-panel-enter space-y-6">
+                {/* STEP 1: Contract Mode */}
+                {configuratorStep === 1 && (
+                  <section
+                    style={{ boxShadow: 'var(--nr-shadow-config)' }}
+                    className="rounded-[20px] border border-[var(--nr-border)] bg-[var(--nr-surface)] p-5 sm:p-7 space-y-6 nr-transition"
+                  >
+                    <div className="space-y-1">
+                      <h2 className="font-display text-xl font-bold text-[var(--nr-text)]">
+                        {ct.configurator.step1Title}
+                      </h2>
+                      <p className="text-sm text-[var(--nr-text-secondary)]">
+                        {ct.configurator.step1Desc}
+                      </p>
+                    </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <button
-                      type="button"
-                      aria-pressed={selection.mode === 'SOFTWARE_ONLY'}
-                      onClick={() => setContractMode('SOFTWARE_ONLY')}
-                      className={`text-left rounded-2xl border p-5 space-y-3.5 nr-focus-ring nr-transition ${
-                        selection.mode === 'SOFTWARE_ONLY'
-                          ? 'border-[var(--nr-primary)] bg-[var(--nr-success-bg)]/55'
-                          : 'border-[var(--nr-border)] bg-[var(--nr-bg)] hover:border-[var(--nr-primary)]/50'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="w-10 h-10 rounded-xl border border-[var(--nr-border)] bg-[var(--nr-surface)] text-[var(--nr-primary)] flex items-center justify-center">
-                          <MonitorSmartphone className="w-5 h-5" />
-                        </div>
-                        <span
-                          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold border ${
-                            selection.mode === 'SOFTWARE_ONLY'
-                              ? 'border-[var(--nr-success-border)] bg-[var(--nr-success-bg)] text-[var(--nr-success)]'
-                              : 'border-[var(--nr-border)] bg-[var(--nr-surface)] text-[var(--nr-text-secondary)]'
-                          }`}
-                        >
-                          {selection.mode === 'SOFTWARE_ONLY' ? (
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                          ) : (
-                            <Circle className="w-3 h-3" />
-                          )}
-                          <span>
-                            {selection.mode === 'SOFTWARE_ONLY'
-                              ? selectedLabel
-                              : availableLabel}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <button
+                        type="button"
+                        aria-pressed={selection.mode === 'SOFTWARE_ONLY'}
+                        onClick={() => setContractMode('SOFTWARE_ONLY')}
+                        className={`text-left rounded-2xl border p-5 space-y-3.5 nr-focus-ring nr-interactive-card ${
+                          selection.mode === 'SOFTWARE_ONLY'
+                            ? 'border-[var(--nr-primary)] bg-[var(--nr-success-bg)]/55'
+                            : 'border-[var(--nr-border)] bg-[var(--nr-bg)] hover:border-[var(--nr-primary)]/50'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="w-10 h-10 rounded-xl border border-[var(--nr-border)] bg-[var(--nr-surface)] text-[var(--nr-primary)] flex items-center justify-center">
+                            <MonitorSmartphone className="w-5 h-5" />
+                          </div>
+                          <span
+                            className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold border ${
+                              selection.mode === 'SOFTWARE_ONLY'
+                                ? 'border-[var(--nr-success-border)] bg-[var(--nr-success-bg)] text-[var(--nr-success)]'
+                                : 'border-[var(--nr-border)] bg-[var(--nr-surface)] text-[var(--nr-text-secondary)]'
+                            }`}
+                          >
+                            {selection.mode === 'SOFTWARE_ONLY' ? (
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                            ) : (
+                              <Circle className="w-3 h-3" />
+                            )}
+                            <span>
+                              {selection.mode === 'SOFTWARE_ONLY'
+                                ? selectedLabel
+                                : availableLabel}
+                            </span>
                           </span>
-                        </span>
-                      </div>
-
-                      <div className="space-y-1">
-                        <div className="font-display text-base font-bold text-[var(--nr-text)]">
-                          {ct.contractModes.softwareTitle}
                         </div>
-                        <p className="text-xs sm:text-sm text-[var(--nr-text-secondary)] leading-relaxed">
-                          {ct.contractModes.softwareDesc}
-                        </p>
-                      </div>
-                    </button>
 
-                    <button
-                      type="button"
-                      aria-pressed={selection.mode === 'POS_BUNDLE'}
-                      onClick={() => setContractMode('POS_BUNDLE')}
-                      className={`text-left rounded-2xl border p-5 space-y-3.5 nr-focus-ring nr-transition ${
-                        selection.mode === 'POS_BUNDLE'
-                          ? 'border-[var(--nr-primary)] bg-[var(--nr-success-bg)]/55'
-                          : 'border-[var(--nr-border)] bg-[var(--nr-bg)] hover:border-[var(--nr-primary)]/50'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="w-10 h-10 rounded-xl border border-[var(--nr-border)] bg-[var(--nr-surface)] text-[var(--nr-primary)] flex items-center justify-center">
-                          <PackageCheck className="w-5 h-5" />
+                        <div className="space-y-1">
+                          <div className="font-display text-base font-bold text-[var(--nr-text)]">
+                            {ct.contractModes.softwareTitle}
+                          </div>
+                          <p className="text-xs sm:text-sm text-[var(--nr-text-secondary)] leading-relaxed">
+                            {ct.contractModes.softwareDesc}
+                          </p>
                         </div>
-                        <span
-                          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold border ${
-                            selection.mode === 'POS_BUNDLE'
-                              ? 'border-[var(--nr-success-border)] bg-[var(--nr-success-bg)] text-[var(--nr-success)]'
-                              : 'border-[var(--nr-border)] bg-[var(--nr-surface)] text-[var(--nr-text-secondary)]'
-                          }`}
-                        >
-                          {selection.mode === 'POS_BUNDLE' ? (
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                          ) : (
-                            <Circle className="w-3 h-3" />
-                          )}
-                          <span>
-                            {selection.mode === 'POS_BUNDLE'
-                              ? selectedLabel
-                              : availableLabel}
+                      </button>
+
+                      <button
+                        type="button"
+                        aria-pressed={selection.mode === 'POS_BUNDLE'}
+                        onClick={() => setContractMode('POS_BUNDLE')}
+                        className={`text-left rounded-2xl border p-5 space-y-3.5 nr-focus-ring nr-interactive-card ${
+                          selection.mode === 'POS_BUNDLE'
+                            ? 'border-[var(--nr-primary)] bg-[var(--nr-success-bg)]/55'
+                            : 'border-[var(--nr-border)] bg-[var(--nr-bg)] hover:border-[var(--nr-primary)]/50'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="w-10 h-10 rounded-xl border border-[var(--nr-border)] bg-[var(--nr-surface)] text-[var(--nr-primary)] flex items-center justify-center">
+                            <PackageCheck className="w-5 h-5" />
+                          </div>
+                          <span
+                            className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold border ${
+                              selection.mode === 'POS_BUNDLE'
+                                ? 'border-[var(--nr-success-border)] bg-[var(--nr-success-bg)] text-[var(--nr-success)]'
+                                : 'border-[var(--nr-border)] bg-[var(--nr-surface)] text-[var(--nr-text-secondary)]'
+                            }`}
+                          >
+                            {selection.mode === 'POS_BUNDLE' ? (
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                            ) : (
+                              <Circle className="w-3 h-3" />
+                            )}
+                            <span>
+                              {selection.mode === 'POS_BUNDLE'
+                                ? selectedLabel
+                                : availableLabel}
+                            </span>
                           </span>
-                        </span>
-                      </div>
-
-                      <div className="space-y-1">
-                        <div className="font-display text-base font-bold text-[var(--nr-text)]">
-                          {ct.contractModes.bundleTitle}
                         </div>
-                        <p className="text-xs sm:text-sm text-[var(--nr-text-secondary)] leading-relaxed">
-                          {ct.contractModes.bundleDesc}
-                        </p>
-                      </div>
-                    </button>
-                  </div>
 
-                  <div className="flex justify-end pt-2 border-t border-[var(--nr-border)]">
-                    <button
-                      type="button"
-                      onClick={() => setConfiguratorStep(2)}
-                      className="inline-flex items-center gap-2 h-11 px-6 rounded-xl bg-[var(--nr-primary)] hover:bg-[var(--nr-primary-hover)] text-sm font-semibold text-[var(--nr-primary-fg)] nr-focus-ring nr-transition"
-                    >
-                      <span>{ct.configurator.nextStep}</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </button>
-                  </div>
-                </section>
-              )}
+                        <div className="space-y-1">
+                          <div className="font-display text-base font-bold text-[var(--nr-text)]">
+                            {ct.contractModes.bundleTitle}
+                          </div>
+                          <p className="text-xs sm:text-sm text-[var(--nr-text-secondary)] leading-relaxed">
+                            {ct.contractModes.bundleDesc}
+                          </p>
+                        </div>
+                      </button>
+                    </div>
+
+                    <div className="flex justify-end pt-2 border-t border-[var(--nr-border)]">
+                      <button
+                        type="button"
+                        onClick={() => setConfiguratorStep(2)}
+                        className="inline-flex items-center gap-2 h-11 px-6 rounded-xl bg-[var(--nr-primary)] hover:bg-[var(--nr-primary-hover)] active:scale-[0.985] text-sm font-semibold text-[var(--nr-primary-fg)] nr-focus-ring nr-transition"
+                      >
+                        <span>{ct.configurator.nextStep}</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </section>
+                )}
 
               {/* STEP 2: Base Plan & Optional Modules */}
               {configuratorStep === 2 && (
@@ -311,7 +312,7 @@ export const PlansConfiguratorScreen: React.FC = () => {
                           type="button"
                           aria-pressed={selected}
                           onClick={() => selectPlan(plan.id)}
-                          className={`text-left rounded-2xl border p-4 sm:p-5 space-y-2.5 nr-focus-ring nr-transition ${
+                          className={`text-left rounded-2xl border p-4 sm:p-5 space-y-2.5 nr-focus-ring nr-interactive-card ${
                             selected
                               ? 'border-[var(--nr-primary)] bg-[var(--nr-success-bg)]/55'
                               : 'border-[var(--nr-border)] bg-[var(--nr-bg)] hover:border-[var(--nr-primary)]/50'
@@ -645,7 +646,7 @@ export const PlansConfiguratorScreen: React.FC = () => {
                                 type="button"
                                 aria-pressed={selected}
                                 onClick={() => selectHardware(hw.id)}
-                                className={`w-full text-left rounded-2xl border p-4 sm:p-5 space-y-2.5 nr-focus-ring nr-transition ${
+                                className={`w-full text-left rounded-2xl border p-4 sm:p-5 space-y-2.5 nr-focus-ring nr-interactive-card ${
                                   selected
                                     ? 'border-[var(--nr-primary)] bg-[var(--nr-success-bg)]/55'
                                     : 'border-[var(--nr-border)] bg-[var(--nr-bg)] hover:border-[var(--nr-primary)]/50'
@@ -879,6 +880,7 @@ export const PlansConfiguratorScreen: React.FC = () => {
               {configuratorStep === 4 && (
                 <QuoteRequestForm onBackToEdit={() => setConfiguratorStep(3)} />
               )}
+              </div>
             </div>
 
             <div className="lg:col-span-4">

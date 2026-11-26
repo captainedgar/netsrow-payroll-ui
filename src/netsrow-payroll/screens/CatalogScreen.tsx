@@ -1,6 +1,12 @@
 import React, { useMemo, useState } from 'react';
-import { Edit3, Plus, Search, X } from 'lucide-react';
+import { Edit3, Plus } from 'lucide-react';
 import { DataTable, DataTableColumn } from '../components/DataTable';
+import {
+  ErpFilterBar,
+  ErpModal,
+  ErpPageHeader,
+  ErpStatePanel,
+} from '../components/ErpUiPrimitives';
 import { MoneyCell } from '../components/MoneyCell';
 import { StatusBadge } from '../components/StatusBadge';
 import { usePayrollWorkspace } from '../context/PayrollWorkspaceContext';
@@ -49,6 +55,7 @@ export const CatalogScreen: React.FC = () => {
 
   const [query, setQuery] = useState('');
   const [catFilter, setCatFilter] = useState('ALL');
+  const [isSaving, setIsSaving] = useState(false);
 
   // Product modal state
   const [productModalOpen, setProductModalOpen] = useState(false);
@@ -130,22 +137,27 @@ export const CatalogScreen: React.FC = () => {
     const price = Number(pPrice);
     const minStock = Number(pMinStock) || 5;
     if (!pSku.trim() || !pName.trim() || Number.isNaN(price) || price <= 0) return;
-    await upsertProduct({
-      id: editProd?.id ?? `prd-${Date.now()}`,
-      sku: pSku.trim(),
-      nameEs: pName.trim(),
-      nameEn: pName.trim(),
-      categoryId: pCat || erpState.categories[0]?.id || '',
-      brandId: pBrand || erpState.brands[0]?.id || '',
-      unitId: pUnit || erpState.units[0]?.id || '',
-      cost: Number.isNaN(cost) ? 0 : cost,
-      price,
-      taxableItbis: pTaxable,
-      stock: editProd?.stock ?? 15,
-      minStock,
-      active: editProd?.active ?? true,
-    });
-    setProductModalOpen(false);
+    setIsSaving(true);
+    try {
+      await upsertProduct({
+        id: editProd?.id ?? `prd-${Date.now()}`,
+        sku: pSku.trim(),
+        nameEs: pName.trim(),
+        nameEn: pName.trim(),
+        categoryId: pCat || erpState.categories[0]?.id || '',
+        brandId: pBrand || erpState.brands[0]?.id || '',
+        unitId: pUnit || erpState.units[0]?.id || '',
+        cost: Number.isNaN(cost) ? 0 : cost,
+        price,
+        taxableItbis: pTaxable,
+        stock: editProd?.stock ?? 15,
+        minStock,
+        active: editProd?.active ?? true,
+      });
+      setProductModalOpen(false);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const openNewAux = () => {
@@ -167,43 +179,52 @@ export const CatalogScreen: React.FC = () => {
   const saveAux = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!auxCode.trim() || !auxName.trim()) return;
-    if (activeSection === 'categories') {
-      await upsertCategory({
-        id: auxEditId ?? `cat-${Date.now()}`,
-        code: auxCode.trim().toUpperCase(),
-        nameEs: auxName.trim(),
-        nameEn: auxName.trim(),
-        active: true,
-      });
-    } else if (activeSection === 'brands') {
-      await upsertBrand({
-        id: auxEditId ?? `brd-${Date.now()}`,
-        code: auxCode.trim().toUpperCase(),
-        name: auxName.trim(),
-        origin: auxExtra.trim() || 'República Dominicana',
-        active: true,
-      });
-    } else if (activeSection === 'units') {
-      await upsertUnit({
-        id: auxEditId ?? `unt-${Date.now()}`,
-        code: auxCode.trim().toUpperCase(),
-        nameEs: auxName.trim(),
-        nameEn: auxName.trim(),
-        allowDecimals: auxExtra === 'true',
-      });
-    } else if (activeSection === 'pricelists') {
-      await upsertPriceList({
-        id: auxEditId ?? `pl-${Date.now()}`,
-        code: auxCode.trim().toUpperCase(),
-        nameEs: auxName.trim(),
-        nameEn: auxName.trim(),
-        discountPercent: Number(auxExtra) || 0,
-        isDefault: false,
-        active: true,
-      });
+    setIsSaving(true);
+    try {
+      if (activeSection === 'categories') {
+        await upsertCategory({
+          id: auxEditId ?? `cat-${Date.now()}`,
+          code: auxCode.trim().toUpperCase(),
+          nameEs: auxName.trim(),
+          nameEn: auxName.trim(),
+          active: true,
+        });
+      } else if (activeSection === 'brands') {
+        await upsertBrand({
+          id: auxEditId ?? `brd-${Date.now()}`,
+          code: auxCode.trim().toUpperCase(),
+          name: auxName.trim(),
+          origin: auxExtra.trim() || 'República Dominicana',
+          active: true,
+        });
+      } else if (activeSection === 'units') {
+        await upsertUnit({
+          id: auxEditId ?? `unt-${Date.now()}`,
+          code: auxCode.trim().toUpperCase(),
+          nameEs: auxName.trim(),
+          nameEn: auxName.trim(),
+          allowDecimals: auxExtra === 'true',
+        });
+      } else if (activeSection === 'pricelists') {
+        await upsertPriceList({
+          id: auxEditId ?? `pl-${Date.now()}`,
+          code: auxCode.trim().toUpperCase(),
+          nameEs: auxName.trim(),
+          nameEn: auxName.trim(),
+          discountPercent: Number(auxExtra) || 0,
+          isDefault: false,
+          active: true,
+        });
+      }
+      setAuxModalOpen(false);
+    } finally {
+      setIsSaving(false);
     }
-    setAuxModalOpen(false);
   };
+
+  const activeFilterCount = (query.trim() ? 1 : 0) + (catFilter !== 'ALL' ? 1 : 0);
+  const editButtonClass =
+    'nr-focus-ring nr-transition inline-flex items-center gap-1 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] hover:border-[var(--nr-primary)] px-2.5 py-1 text-xs font-medium text-[var(--nr-text)]';
 
   const productCols: DataTableColumn<CatalogProduct>[] = [
     {
@@ -211,7 +232,7 @@ export const CatalogScreen: React.FC = () => {
       header: 'SKU',
       stickyLeft: true,
       render: (p) => (
-        <span className="font-mono-num text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+        <span className="font-mono-num text-xs font-semibold text-[var(--nr-primary)]">
           {p.sku}
         </span>
       ),
@@ -222,10 +243,10 @@ export const CatalogScreen: React.FC = () => {
       minWidthClass: 'min-w-[200px]',
       render: (p) => (
         <div>
-          <div className="font-semibold text-slate-900 dark:text-slate-100">
+          <div className="font-semibold text-[var(--nr-text)]">
             {locale === 'es' ? p.nameEs : p.nameEn}
           </div>
-          <div className="text-[11px] text-slate-500 dark:text-slate-400">
+          <div className="text-[11px] text-[var(--nr-text-secondary)]">
             {brandMap.get(p.brandId)?.name ?? '—'} ·{' '}
             {unitMap.get(p.unitId)?.code ?? 'UND'}
           </div>
@@ -238,7 +259,7 @@ export const CatalogScreen: React.FC = () => {
       render: (p) => {
         const c = catMap.get(p.categoryId);
         return (
-          <span className="text-xs text-slate-700 dark:text-slate-300">
+          <span className="text-xs text-[var(--nr-text-secondary)]">
             {c ? (locale === 'es' ? c.nameEs : c.nameEn) : '—'}
           </span>
         );
@@ -256,14 +277,12 @@ export const CatalogScreen: React.FC = () => {
     },
     {
       key: 'stock',
-      header: locale === 'es' ? 'Stock' : 'Stock',
+      header: 'Stock',
       align: 'right',
       render: (p) => (
         <span
           className={`font-mono-num text-xs font-bold ${
-            p.stock <= p.minStock
-              ? 'text-amber-700 dark:text-amber-300'
-              : 'text-slate-900 dark:text-slate-100'
+            p.stock <= p.minStock ? 'text-[var(--nr-warning)]' : 'text-[var(--nr-text)]'
           }`}
         >
           {p.stock}
@@ -287,7 +306,7 @@ export const CatalogScreen: React.FC = () => {
             e.stopPropagation();
             openEditProduct(p);
           }}
-          className="inline-flex items-center gap-1 rounded border border-slate-200 dark:border-slate-700 px-2.5 py-1 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
+          className={editButtonClass}
         >
           <Edit3 className="w-3 h-3" />
           <span>{t.common.edit}</span>
@@ -472,39 +491,34 @@ export const CatalogScreen: React.FC = () => {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="font-display text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100">
-              {t.navigation.catalog}
-            </h1>
-            <StatusBadge label={t.topBar.demoOnlyTag} tone="amber" />
-          </div>
-          <p className="mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-            {locale === 'es'
-              ? 'Administra las 5 secciones del catálogo comercial de NetsRow ERP.'
-              : 'Manage all 5 commercial catalog sections in NetsRow ERP.'}
-          </p>
-        </div>
-
-        <button
-          type="button"
-          onClick={activeSection === 'products' ? openNewProduct : openNewAux}
-          className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded bg-emerald-600 hover:bg-emerald-700 text-xs font-semibold text-white whitespace-nowrap shrink-0"
-        >
-          <Plus className="w-4 h-4" />
-          <span>
-            {activeSection === 'products'
-              ? locale === 'es'
-                ? 'Nuevo producto'
-                : 'New product'
-              : t.common.add}
-          </span>
-        </button>
-      </div>
+      <ErpPageHeader
+        title={t.navigation.catalog}
+        subtitle={
+          locale === 'es'
+            ? 'Administra las 5 secciones del catálogo comercial de NetsRow ERP.'
+            : 'Manage all 5 commercial catalog sections in NetsRow ERP.'
+        }
+        badge={<StatusBadge label={t.topBar.demoOnlyTag} tone="amber" />}
+        actions={
+          <button
+            type="button"
+            onClick={activeSection === 'products' ? openNewProduct : openNewAux}
+            className="nr-focus-ring nr-transition inline-flex items-center gap-1.5 h-10 px-4 rounded-lg bg-[var(--nr-primary)] hover:bg-[var(--nr-primary-hover)] text-xs font-semibold text-[var(--nr-primary-fg)] whitespace-nowrap shrink-0"
+          >
+            <Plus className="w-4 h-4" />
+            <span>
+              {activeSection === 'products'
+                ? locale === 'es'
+                  ? 'Nuevo producto'
+                  : 'New product'
+                : t.common.add}
+            </span>
+          </button>
+        }
+      />
 
       {/* 5 Sections Navigation Tabs */}
-      <div className="flex flex-wrap items-center gap-1 border-b border-slate-200 dark:border-slate-800">
+      <div className="flex flex-wrap items-center gap-1 border-b border-[var(--nr-border)]">
         {(
           [
             { id: 'products', label: t.navigation.catalogProducts },
@@ -518,10 +532,10 @@ export const CatalogScreen: React.FC = () => {
             key={tab.id}
             type="button"
             onClick={() => setSection(tab.id)}
-            className={`px-3.5 py-2.5 text-xs font-semibold border-b-2 transition-colors whitespace-nowrap ${
+            className={`nr-focus-ring nr-transition px-3.5 py-2.5 text-xs font-semibold border-b-2 whitespace-nowrap ${
               activeSection === tab.id
-                ? 'border-emerald-600 text-emerald-700 dark:border-emerald-400 dark:text-emerald-300'
-                : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                ? 'border-[var(--nr-primary)] text-[var(--nr-primary)]'
+                : 'border-transparent text-[var(--nr-text-secondary)] hover:text-[var(--nr-text)]'
             }`}
           >
             {tab.label}
@@ -531,24 +545,25 @@ export const CatalogScreen: React.FC = () => {
 
       {activeSection === 'products' && (
         <>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="relative flex-1 max-w-md">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-              <input
-                type="search"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder={
-                  locale === 'es' ? 'Buscar por SKU o nombre…' : 'Search by SKU or name…'
-                }
-                className="w-full h-9 pl-9 pr-3 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:border-emerald-500"
-              />
-            </div>
-
+          <ErpFilterBar
+            searchValue={query}
+            onSearchChange={setQuery}
+            searchPlaceholder={
+              locale === 'es' ? 'Buscar por SKU o nombre…' : 'Search by SKU or name…'
+            }
+            hasActiveFilters={activeFilterCount > 0}
+            activeFilterCount={activeFilterCount}
+            clearLabel={locale === 'es' ? 'Limpiar' : 'Clear'}
+            onClearFilters={() => {
+              setQuery('');
+              setCatFilter('ALL');
+            }}
+          >
             <select
+              aria-label={t.navigation.catalogCategories}
               value={catFilter}
               onChange={(e) => setCatFilter(e.target.value)}
-              className="h-9 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 text-xs font-semibold text-slate-800 dark:text-slate-200"
+              className="nr-focus-ring nr-transition h-10 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-3 text-xs font-semibold text-[var(--nr-text)]"
             >
               <option value="ALL">{t.common.all}</option>
               {erpState.categories.map((c) => (
@@ -557,14 +572,36 @@ export const CatalogScreen: React.FC = () => {
                 </option>
               ))}
             </select>
-          </div>
+          </ErpFilterBar>
 
-          <DataTable
-            columns={productCols}
-            rows={filteredProducts}
-            getRowKey={(r) => r.id}
-            emptyMessage={t.common.noResults}
-          />
+          {filteredProducts.length === 0 ? (
+            <ErpStatePanel
+              variant="empty"
+              title={t.common.noResults}
+              actionLabel={
+                activeFilterCount > 0
+                  ? locale === 'es'
+                    ? 'Limpiar filtros'
+                    : 'Clear filters'
+                  : undefined
+              }
+              onAction={
+                activeFilterCount > 0
+                  ? () => {
+                      setQuery('');
+                      setCatFilter('ALL');
+                    }
+                  : undefined
+              }
+            />
+          ) : (
+            <DataTable
+              columns={productCols}
+              rows={filteredProducts}
+              getRowKey={(r) => r.id}
+              emptyMessage={t.common.noResults}
+            />
+          )}
         </>
       )}
 
@@ -605,251 +642,234 @@ export const CatalogScreen: React.FC = () => {
       )}
 
       {/* Product Create/Edit Modal */}
-      {productModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60">
-          <div className="w-full max-w-lg rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xl">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-800">
-              <h2 className="font-display text-base font-bold text-slate-900 dark:text-slate-100">
-                {editProd
-                  ? locale === 'es'
-                    ? 'Editar producto'
-                    : 'Edit product'
-                  : locale === 'es'
-                    ? 'Nuevo producto'
-                    : 'New product'}
-              </h2>
-              <button
-                type="button"
-                onClick={() => setProductModalOpen(false)}
-                className="p-1 text-slate-500 hover:text-slate-900 dark:hover:text-white"
-              >
-                <X className="w-4 h-4" />
-              </button>
+      <ErpModal
+        open={productModalOpen}
+        onClose={() => setProductModalOpen(false)}
+        title={
+          editProd
+            ? locale === 'es'
+              ? 'Editar producto'
+              : 'Edit product'
+            : locale === 'es'
+              ? 'Nuevo producto'
+              : 'New product'
+        }
+        maxWidthClass="max-w-lg"
+        closeLabel={t.common.cancel}
+      >
+        <form onSubmit={saveProduct} className="space-y-3">
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-[var(--nr-text)] mb-1">SKU</label>
+              <input
+                value={pSku}
+                onChange={(e) => setPSku(e.target.value)}
+                required
+                className="nr-focus-ring w-full h-9 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-2.5 text-sm font-mono-num text-[var(--nr-text)]"
+              />
             </div>
-            <form onSubmit={saveProduct} className="p-4 space-y-3">
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold mb-1">SKU</label>
-                  <input
-                    value={pSku}
-                    onChange={(e) => setPSku(e.target.value)}
-                    required
-                    className="w-full h-9 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 text-sm font-mono-num"
-                  />
-                </div>
-                <div className="col-span-2">
-                  <label className="block text-xs font-semibold mb-1">
-                    {locale === 'es' ? 'Nombre del producto' : 'Product name'}
-                  </label>
-                  <input
-                    value={pName}
-                    onChange={(e) => setPName(e.target.value)}
-                    required
-                    className="w-full h-9 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 text-sm"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold mb-1">
-                    {t.navigation.catalogCategories}
-                  </label>
-                  <select
-                    value={pCat}
-                    onChange={(e) => setPCat(e.target.value)}
-                    className="w-full h-9 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 text-xs"
-                  >
-                    {erpState.categories.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {locale === 'es' ? c.nameEs : c.nameEn}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold mb-1">
-                    {t.navigation.catalogBrands}
-                  </label>
-                  <select
-                    value={pBrand}
-                    onChange={(e) => setPBrand(e.target.value)}
-                    className="w-full h-9 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 text-xs"
-                  >
-                    {erpState.brands.map((b) => (
-                      <option key={b.id} value={b.id}>
-                        {b.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold mb-1">
-                    {t.navigation.catalogUnits}
-                  </label>
-                  <select
-                    value={pUnit}
-                    onChange={(e) => setPUnit(e.target.value)}
-                    className="w-full h-9 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 text-xs"
-                  >
-                    {erpState.units.map((u) => (
-                      <option key={u.id} value={u.id}>
-                        {u.code}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold mb-1">
-                    {locale === 'es' ? 'Costo RD$' : 'Cost RD$'}
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={pCost}
-                    onChange={(e) => setPCost(e.target.value)}
-                    className="w-full h-9 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 text-sm font-mono-num"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold mb-1">
-                    {locale === 'es' ? 'Precio RD$' : 'Price RD$'}
-                  </label>
-                  <input
-                    type="number"
-                    min="0.01"
-                    step="0.01"
-                    required
-                    value={pPrice}
-                    onChange={(e) => setPPrice(e.target.value)}
-                    className="w-full h-9 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 text-sm font-mono-num"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold mb-1">
-                    {locale === 'es' ? 'Stock mínimo' : 'Min stock'}
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={pMinStock}
-                    onChange={(e) => setPMinStock(e.target.value)}
-                    className="w-full h-9 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 text-sm font-mono-num"
-                  />
-                </div>
-              </div>
-
-              <label className="flex items-center gap-2 text-xs font-medium cursor-pointer pt-1">
-                <input
-                  type="checkbox"
-                  checked={pTaxable}
-                  onChange={(e) => setPTaxable(e.target.checked)}
-                />
-                <span>
-                  {locale === 'es'
-                    ? 'Aplica ITBIS (18%)'
-                    : 'Subject to ITBIS (18%)'}
-                </span>
+            <div className="col-span-2">
+              <label className="block text-xs font-semibold text-[var(--nr-text)] mb-1">
+                {locale === 'es' ? 'Nombre del producto' : 'Product name'}
               </label>
-
-              <div className="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setProductModalOpen(false)}
-                  className="h-9 px-3.5 rounded border border-slate-300 dark:border-slate-700 text-xs font-semibold"
-                >
-                  {t.common.cancel}
-                </button>
-                <button
-                  type="submit"
-                  className="h-9 px-4 rounded bg-emerald-600 hover:bg-emerald-700 text-xs font-semibold text-white"
-                >
-                  {t.common.save}
-                </button>
-              </div>
-            </form>
+              <input
+                value={pName}
+                onChange={(e) => setPName(e.target.value)}
+                required
+                className="nr-focus-ring w-full h-9 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-2.5 text-sm text-[var(--nr-text)]"
+              />
+            </div>
           </div>
-        </div>
-      )}
+
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-[var(--nr-text)] mb-1">
+                {t.navigation.catalogCategories}
+              </label>
+              <select
+                value={pCat}
+                onChange={(e) => setPCat(e.target.value)}
+                className="nr-focus-ring w-full h-9 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-2 text-xs text-[var(--nr-text)]"
+              >
+                {erpState.categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {locale === 'es' ? c.nameEs : c.nameEn}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-[var(--nr-text)] mb-1">
+                {t.navigation.catalogBrands}
+              </label>
+              <select
+                value={pBrand}
+                onChange={(e) => setPBrand(e.target.value)}
+                className="nr-focus-ring w-full h-9 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-2 text-xs text-[var(--nr-text)]"
+              >
+                {erpState.brands.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-[var(--nr-text)] mb-1">
+                {t.navigation.catalogUnits}
+              </label>
+              <select
+                value={pUnit}
+                onChange={(e) => setPUnit(e.target.value)}
+                className="nr-focus-ring w-full h-9 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-2 text-xs text-[var(--nr-text)]"
+              >
+                {erpState.units.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.code}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-[var(--nr-text)] mb-1">
+                {locale === 'es' ? 'Costo RD$' : 'Cost RD$'}
+              </label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={pCost}
+                onChange={(e) => setPCost(e.target.value)}
+                className="nr-focus-ring w-full h-9 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-2.5 text-sm font-mono-num text-[var(--nr-text)]"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-[var(--nr-text)] mb-1">
+                {locale === 'es' ? 'Precio RD$' : 'Price RD$'}
+              </label>
+              <input
+                type="number"
+                min="0.01"
+                step="0.01"
+                required
+                value={pPrice}
+                onChange={(e) => setPPrice(e.target.value)}
+                className="nr-focus-ring w-full h-9 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-2.5 text-sm font-mono-num text-[var(--nr-text)]"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-[var(--nr-text)] mb-1">
+                {locale === 'es' ? 'Stock mínimo' : 'Min stock'}
+              </label>
+              <input
+                type="number"
+                min="0"
+                value={pMinStock}
+                onChange={(e) => setPMinStock(e.target.value)}
+                className="nr-focus-ring w-full h-9 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-2.5 text-sm font-mono-num text-[var(--nr-text)]"
+              />
+            </div>
+          </div>
+
+          <label className="flex items-center gap-2 text-xs font-medium text-[var(--nr-text)] cursor-pointer pt-1">
+            <input
+              type="checkbox"
+              checked={pTaxable}
+              onChange={(e) => setPTaxable(e.target.checked)}
+              className="accent-[var(--nr-primary)]"
+            />
+            <span>{locale === 'es' ? 'Aplica ITBIS (18%)' : 'Subject to ITBIS (18%)'}</span>
+          </label>
+
+          <div className="flex justify-end gap-2 pt-3 border-t border-[var(--nr-border)]">
+            <button
+              type="button"
+              onClick={() => setProductModalOpen(false)}
+              className="nr-focus-ring nr-transition h-9 px-3.5 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface)] text-xs font-semibold text-[var(--nr-text)] hover:bg-[var(--nr-surface-muted)]"
+            >
+              {t.common.cancel}
+            </button>
+            <button
+              type="submit"
+              disabled={isSaving}
+              className="nr-focus-ring nr-transition h-9 px-4 rounded-lg bg-[var(--nr-primary)] hover:bg-[var(--nr-primary-hover)] text-xs font-semibold text-[var(--nr-primary-fg)] disabled:opacity-50"
+            >
+              {t.common.save}
+            </button>
+          </div>
+        </form>
+      </ErpModal>
 
       {/* Auxiliary Section Create/Edit Modal */}
-      {auxModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60">
-          <div className="w-full max-w-md rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xl">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-800">
-              <h2 className="font-display text-base font-bold">
-                {auxEditId ? t.common.edit : t.common.add}
-              </h2>
-              <button
-                type="button"
-                onClick={() => setAuxModalOpen(false)}
-                className="p-1 text-slate-500"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            <form onSubmit={saveAux} className="p-4 space-y-3">
-              <div>
-                <label className="block text-xs font-semibold mb-1">{t.common.code}</label>
-                <input
-                  value={auxCode}
-                  onChange={(e) => setAuxCode(e.target.value)}
-                  required
-                  className="w-full h-9 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 text-sm font-mono-num"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold mb-1">
-                  {locale === 'es' ? 'Nombre' : 'Name'}
-                </label>
-                <input
-                  value={auxName}
-                  onChange={(e) => setAuxName(e.target.value)}
-                  required
-                  className="w-full h-9 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 text-sm"
-                />
-              </div>
-              {(activeSection === 'brands' || activeSection === 'pricelists') && (
-                <div>
-                  <label className="block text-xs font-semibold mb-1">
-                    {activeSection === 'pricelists'
-                      ? locale === 'es'
-                        ? 'Descuento (%)'
-                        : 'Discount (%)'
-                      : locale === 'es'
-                        ? 'Origen'
-                        : 'Origin'}
-                  </label>
-                  <input
-                    value={auxExtra}
-                    onChange={(e) => setAuxExtra(e.target.value)}
-                    className="w-full h-9 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 text-sm"
-                  />
-                </div>
-              )}
-              <div className="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setAuxModalOpen(false)}
-                  className="h-9 px-3.5 rounded border border-slate-300 dark:border-slate-700 text-xs font-semibold"
-                >
-                  {t.common.cancel}
-                </button>
-                <button
-                  type="submit"
-                  className="h-9 px-4 rounded bg-emerald-600 hover:bg-emerald-700 text-xs font-semibold text-white"
-                >
-                  {t.common.save}
-                </button>
-              </div>
-            </form>
+      <ErpModal
+        open={auxModalOpen}
+        onClose={() => setAuxModalOpen(false)}
+        title={auxEditId ? t.common.edit : t.common.add}
+        maxWidthClass="max-w-md"
+        closeLabel={t.common.cancel}
+      >
+        <form onSubmit={saveAux} className="space-y-3">
+          <div>
+            <label className="block text-xs font-semibold text-[var(--nr-text)] mb-1">
+              {t.common.code}
+            </label>
+            <input
+              value={auxCode}
+              onChange={(e) => setAuxCode(e.target.value)}
+              required
+              className="nr-focus-ring w-full h-9 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-2.5 text-sm font-mono-num text-[var(--nr-text)]"
+            />
           </div>
-        </div>
-      )}
+          <div>
+            <label className="block text-xs font-semibold text-[var(--nr-text)] mb-1">
+              {locale === 'es' ? 'Nombre' : 'Name'}
+            </label>
+            <input
+              value={auxName}
+              onChange={(e) => setAuxName(e.target.value)}
+              required
+              className="nr-focus-ring w-full h-9 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-2.5 text-sm text-[var(--nr-text)]"
+            />
+          </div>
+          {(activeSection === 'brands' || activeSection === 'pricelists') && (
+            <div>
+              <label className="block text-xs font-semibold text-[var(--nr-text)] mb-1">
+                {activeSection === 'pricelists'
+                  ? locale === 'es'
+                    ? 'Descuento (%)'
+                    : 'Discount (%)'
+                  : locale === 'es'
+                    ? 'Origen'
+                    : 'Origin'}
+              </label>
+              <input
+                value={auxExtra}
+                onChange={(e) => setAuxExtra(e.target.value)}
+                className="nr-focus-ring w-full h-9 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-2.5 text-sm text-[var(--nr-text)]"
+              />
+            </div>
+          )}
+          <div className="flex justify-end gap-2 pt-3 border-t border-[var(--nr-border)]">
+            <button
+              type="button"
+              onClick={() => setAuxModalOpen(false)}
+              className="nr-focus-ring nr-transition h-9 px-3.5 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface)] text-xs font-semibold text-[var(--nr-text)] hover:bg-[var(--nr-surface-muted)]"
+            >
+              {t.common.cancel}
+            </button>
+            <button
+              type="submit"
+              disabled={isSaving}
+              className="nr-focus-ring nr-transition h-9 px-4 rounded-lg bg-[var(--nr-primary)] hover:bg-[var(--nr-primary-hover)] text-xs font-semibold text-[var(--nr-primary-fg)] disabled:opacity-50"
+            >
+              {t.common.save}
+            </button>
+          </div>
+        </form>
+      </ErpModal>
     </div>
   );
 };

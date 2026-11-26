@@ -1,6 +1,12 @@
 import React, { useMemo, useState } from 'react';
-import { AlertTriangle, Plus, Search, X } from 'lucide-react';
+import { AlertTriangle, Plus } from 'lucide-react';
 import { DataTable, DataTableColumn } from '../components/DataTable';
+import {
+  ErpFilterBar,
+  ErpModal,
+  ErpPageHeader,
+  ErpStatePanel,
+} from '../components/ErpUiPrimitives';
 import { MoneyCell } from '../components/MoneyCell';
 import { StatusBadge } from '../components/StatusBadge';
 import { usePayrollWorkspace } from '../context/PayrollWorkspaceContext';
@@ -36,6 +42,7 @@ export const InventoryScreen: React.FC = () => {
 
   const [query, setQuery] = useState('');
   const [adjOpen, setAdjOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [adjProductId, setAdjProductId] = useState(erpState.products[0]?.id ?? '');
   const [adjDirection, setAdjDirection] = useState<'IN' | 'OUT'>('IN');
   const [adjQuantity, setAdjQuantity] = useState('5');
@@ -73,14 +80,19 @@ export const InventoryScreen: React.FC = () => {
 
   const handleAdjustSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await registerInventoryAdjustment({
-      productId: adjProductId,
-      direction: adjDirection,
-      quantity: Number(adjQuantity) || 0,
-      reason: adjReason.trim(),
-    });
-    setAdjOpen(false);
-    setTab('movements');
+    setIsSubmitting(true);
+    try {
+      await registerInventoryAdjustment({
+        productId: adjProductId,
+        direction: adjDirection,
+        quantity: Number(adjQuantity) || 0,
+        reason: adjReason.trim(),
+      });
+      setAdjOpen(false);
+      setTab('movements');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const stockCols: DataTableColumn<CatalogProduct>[] = [
@@ -89,7 +101,7 @@ export const InventoryScreen: React.FC = () => {
       header: 'SKU',
       stickyLeft: true,
       render: (p) => (
-        <span className="font-mono-num text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+        <span className="font-mono-num text-xs font-semibold text-[var(--nr-primary)]">
           {p.sku}
         </span>
       ),
@@ -99,7 +111,7 @@ export const InventoryScreen: React.FC = () => {
       header: locale === 'es' ? 'Producto' : 'Product',
       minWidthClass: 'min-w-[200px]',
       render: (p) => (
-        <span className="font-semibold text-slate-900 dark:text-slate-100">
+        <span className="font-semibold text-[var(--nr-text)]">
           {locale === 'es' ? p.nameEs : p.nameEn}
         </span>
       ),
@@ -111,7 +123,7 @@ export const InventoryScreen: React.FC = () => {
       render: (p) => (
         <span
           className={`font-mono-num font-bold ${
-            p.stock <= p.minStock ? 'text-amber-700 dark:text-amber-300' : ''
+            p.stock <= p.minStock ? 'text-[var(--nr-warning)]' : 'text-[var(--nr-text)]'
           }`}
         >
           {p.stock}
@@ -122,7 +134,9 @@ export const InventoryScreen: React.FC = () => {
       key: 'min',
       header: locale === 'es' ? 'Stock mín.' : 'Min stock',
       align: 'right',
-      render: (p) => <span className="font-mono-num text-xs">{p.minStock}</span>,
+      render: (p) => (
+        <span className="font-mono-num text-xs text-[var(--nr-text-secondary)]">{p.minStock}</span>
+      ),
     },
     {
       key: 'val',
@@ -157,7 +171,7 @@ export const InventoryScreen: React.FC = () => {
         <button
           type="button"
           onClick={() => openAdjustFor(p.id)}
-          className="rounded border border-emerald-600/30 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 text-xs font-semibold text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50"
+          className="nr-focus-ring nr-transition rounded-lg border border-[var(--nr-success-border)] bg-[var(--nr-success-bg)] hover:border-[var(--nr-primary)] px-2.5 py-1 text-xs font-semibold text-[var(--nr-success)]"
         >
           {locale === 'es' ? 'Ajustar' : 'Adjust'}
         </button>
@@ -170,7 +184,9 @@ export const InventoryScreen: React.FC = () => {
       key: 'date',
       header: t.common.date,
       stickyLeft: true,
-      render: (m) => <span className="font-mono-num text-xs">{m.date}</span>,
+      render: (m) => (
+        <span className="font-mono-num text-xs text-[var(--nr-text-secondary)]">{m.date}</span>
+      ),
     },
     {
       key: 'product',
@@ -179,10 +195,12 @@ export const InventoryScreen: React.FC = () => {
         const p = productMap.get(m.productId);
         return (
           <div>
-            <div className="font-semibold text-xs">
+            <div className="font-semibold text-xs text-[var(--nr-text)]">
               {p ? (locale === 'es' ? p.nameEs : p.nameEn) : m.productId}
             </div>
-            <div className="font-mono-num text-[11px] text-slate-500">{m.reference}</div>
+            <div className="font-mono-num text-[11px] text-[var(--nr-text-secondary)]">
+              {m.reference}
+            </div>
           </div>
         );
       },
@@ -204,9 +222,7 @@ export const InventoryScreen: React.FC = () => {
       render: (m) => (
         <span
           className={`font-mono-num font-bold ${
-            m.quantityDelta >= 0
-              ? 'text-emerald-700 dark:text-emerald-400'
-              : 'text-red-600 dark:text-red-400'
+            m.quantityDelta >= 0 ? 'text-[var(--nr-primary)]' : 'text-[var(--nr-error)]'
           }`}
         >
           {m.quantityDelta >= 0 ? `+${m.quantityDelta}` : m.quantityDelta}
@@ -217,13 +233,15 @@ export const InventoryScreen: React.FC = () => {
       key: 'after',
       header: locale === 'es' ? 'Stock resultante' : 'Stock after',
       align: 'right',
-      render: (m) => <span className="font-mono-num font-semibold">{m.stockAfter}</span>,
+      render: (m) => (
+        <span className="font-mono-num font-semibold text-[var(--nr-text)]">{m.stockAfter}</span>
+      ),
     },
     {
       key: 'reason',
       header: locale === 'es' ? 'Motivo' : 'Reason',
       render: (m) => (
-        <span className="text-xs text-slate-600 dark:text-slate-300">
+        <span className="text-xs text-[var(--nr-text-secondary)]">
           {locale === 'es' ? m.reasonEs : m.reasonEn}
         </span>
       ),
@@ -232,33 +250,28 @@ export const InventoryScreen: React.FC = () => {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="font-display text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100">
-              {t.navigation.inventory} · {activeBranch?.name ?? ''}
-            </h1>
-            <StatusBadge label={t.topBar.demoOnlyTag} tone="amber" />
-          </div>
-          <p className="mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-            {locale === 'es'
-              ? 'Consulta existencias, alertas de reposición y registra ajustes simulados con trazabilidad.'
-              : 'Monitor stock on hand, replenishment alerts, and post simulated stock adjustments.'}
-          </p>
-        </div>
-
-        <button
-          type="button"
-          onClick={() => openAdjustFor()}
-          className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded bg-emerald-600 hover:bg-emerald-700 text-xs font-semibold text-white whitespace-nowrap shrink-0"
-        >
-          <Plus className="w-4 h-4" />
-          <span>{locale === 'es' ? 'Registrar ajuste simulado' : 'Record adjustment'}</span>
-        </button>
-      </div>
+      <ErpPageHeader
+        title={`${t.navigation.inventory} · ${activeBranch?.name ?? ''}`}
+        subtitle={
+          locale === 'es'
+            ? 'Consulta existencias, alertas de reposición y registra ajustes simulados con trazabilidad.'
+            : 'Monitor stock on hand, replenishment alerts, and post simulated stock adjustments.'
+        }
+        badge={<StatusBadge label={t.topBar.demoOnlyTag} tone="amber" />}
+        actions={
+          <button
+            type="button"
+            onClick={() => openAdjustFor()}
+            className="nr-focus-ring nr-transition inline-flex items-center gap-1.5 h-10 px-4 rounded-lg bg-[var(--nr-primary)] hover:bg-[var(--nr-primary-hover)] text-xs font-semibold text-[var(--nr-primary-fg)] whitespace-nowrap shrink-0"
+          >
+            <Plus className="w-4 h-4" />
+            <span>{locale === 'es' ? 'Registrar ajuste simulado' : 'Record adjustment'}</span>
+          </button>
+        }
+      />
 
       {/* Tabs */}
-      <div className="flex flex-wrap items-center gap-1 border-b border-slate-200 dark:border-slate-800">
+      <div className="flex flex-wrap items-center gap-1 border-b border-[var(--nr-border)]">
         {(
           [
             { id: 'stock', label: t.navigation.inventoryStock },
@@ -276,10 +289,10 @@ export const InventoryScreen: React.FC = () => {
             key={tab.id}
             type="button"
             onClick={() => setTab(tab.id)}
-            className={`px-3.5 py-2.5 text-xs font-semibold border-b-2 transition-colors whitespace-nowrap ${
+            className={`nr-focus-ring nr-transition px-3.5 py-2.5 text-xs font-semibold border-b-2 whitespace-nowrap ${
               activeTab === tab.id
-                ? 'border-emerald-600 text-emerald-700 dark:border-emerald-400 dark:text-emerald-300'
-                : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                ? 'border-[var(--nr-primary)] text-[var(--nr-primary)]'
+                : 'border-transparent text-[var(--nr-text-secondary)] hover:text-[var(--nr-text)]'
             }`}
           >
             {tab.label}
@@ -288,7 +301,7 @@ export const InventoryScreen: React.FC = () => {
       </div>
 
       {activeTab === 'alerts' && lowStock.length > 0 && (
-        <div className="flex items-center gap-2 rounded-md border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 p-3 text-xs text-amber-900 dark:text-amber-200">
+        <div className="flex items-center gap-2 rounded-xl border border-[var(--nr-warning-border)] bg-[var(--nr-warning-bg)] p-3 text-xs font-medium text-[var(--nr-warning)]">
           <AlertTriangle className="w-4 h-4 shrink-0" />
           <span>
             {locale === 'es'
@@ -300,24 +313,33 @@ export const InventoryScreen: React.FC = () => {
 
       {activeTab !== 'movements' ? (
         <>
-          <div className="relative max-w-md">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-            <input
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={
-                locale === 'es' ? 'Buscar producto o SKU…' : 'Search product or SKU…'
-              }
-              className="w-full h-9 pl-9 pr-3 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:border-emerald-500"
-            />
-          </div>
-          <DataTable
-            columns={stockCols}
-            rows={filteredProducts}
-            getRowKey={(p) => p.id}
-            emptyMessage={t.common.noResults}
+          <ErpFilterBar
+            searchValue={query}
+            onSearchChange={setQuery}
+            searchPlaceholder={
+              locale === 'es' ? 'Buscar producto o SKU…' : 'Search product or SKU…'
+            }
+            hasActiveFilters={query.trim().length > 0}
+            activeFilterCount={query.trim() ? 1 : 0}
+            clearLabel={locale === 'es' ? 'Limpiar' : 'Clear'}
+            onClearFilters={() => setQuery('')}
           />
+
+          {filteredProducts.length === 0 ? (
+            <ErpStatePanel
+              variant="empty"
+              title={t.common.noResults}
+              actionLabel={query.trim() ? (locale === 'es' ? 'Limpiar búsqueda' : 'Clear search') : undefined}
+              onAction={query.trim() ? () => setQuery('') : undefined}
+            />
+          ) : (
+            <DataTable
+              columns={stockCols}
+              rows={filteredProducts}
+              getRowKey={(p) => p.id}
+              emptyMessage={t.common.noResults}
+            />
+          )}
         </>
       ) : (
         <DataTable
@@ -328,103 +350,96 @@ export const InventoryScreen: React.FC = () => {
         />
       )}
 
-      {/* Adjustment Modal */}
-      {adjOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60">
-          <div className="w-full max-w-md rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xl">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-800">
-              <h2 className="font-display text-base font-bold">
-                {locale === 'es' ? 'Ajuste simulado de inventario' : 'Simulated stock adjustment'}
-              </h2>
-              <button type="button" onClick={() => setAdjOpen(false)} className="p-1">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            <form onSubmit={handleAdjustSubmit} className="p-4 space-y-3">
-              <div>
-                <label className="block text-xs font-semibold mb-1">
-                  {locale === 'es' ? 'Producto' : 'Product'}
-                </label>
-                <select
-                  value={adjProductId}
-                  onChange={(e) => setAdjProductId(e.target.value)}
-                  className="w-full h-9 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 text-sm"
-                >
-                  {erpState.products.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.sku} · {locale === 'es' ? p.nameEs : p.nameEn} (Stock: {p.stock})
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold mb-1">
-                    {locale === 'es' ? 'Tipo de ajuste' : 'Adjustment type'}
-                  </label>
-                  <select
-                    value={adjDirection}
-                    onChange={(e) => setAdjDirection(e.target.value as 'IN' | 'OUT')}
-                    className="w-full h-9 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 text-sm"
-                  >
-                    <option value="IN">
-                      {locale === 'es' ? 'Entrada (+)' : 'Stock In (+)'}
-                    </option>
-                    <option value="OUT">
-                      {locale === 'es' ? 'Salida (-)' : 'Stock Out (-)'}
-                    </option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold mb-1">
-                    {locale === 'es' ? 'Cantidad' : 'Quantity'}
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    required
-                    value={adjQuantity}
-                    onChange={(e) => setAdjQuantity(e.target.value)}
-                    className="w-full h-9 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 text-sm font-mono-num"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold mb-1">
-                  {locale === 'es' ? 'Motivo / Justificación' : 'Reason'}
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={adjReason}
-                  onChange={(e) => setAdjReason(e.target.value)}
-                  placeholder={
-                    locale === 'es'
-                      ? 'Ej. Conteo físico mensual'
-                      : 'e.g. Monthly cycle count'
-                  }
-                  className="w-full h-9 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 text-sm"
-                />
-              </div>
-              <div className="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setAdjOpen(false)}
-                  className="h-9 px-3.5 rounded border border-slate-300 dark:border-slate-700 text-xs font-semibold"
-                >
-                  {t.common.cancel}
-                </button>
-                <button
-                  type="submit"
-                  className="h-9 px-4 rounded bg-emerald-600 hover:bg-emerald-700 text-xs font-semibold text-white"
-                >
-                  {t.common.save}
-                </button>
-              </div>
-            </form>
+      <ErpModal
+        open={adjOpen}
+        onClose={() => setAdjOpen(false)}
+        title={
+          locale === 'es'
+            ? 'Ajuste simulado de inventario'
+            : 'Simulated stock adjustment'
+        }
+        maxWidthClass="max-w-md"
+        closeLabel={t.common.cancel}
+      >
+        <form onSubmit={handleAdjustSubmit} className="space-y-3">
+          <div>
+            <label className="block text-xs font-semibold text-[var(--nr-text)] mb-1">
+              {locale === 'es' ? 'Producto' : 'Product'}
+            </label>
+            <select
+              value={adjProductId}
+              onChange={(e) => setAdjProductId(e.target.value)}
+              className="nr-focus-ring w-full h-9 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-2.5 text-sm text-[var(--nr-text)]"
+            >
+              {erpState.products.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.sku} · {locale === 'es' ? p.nameEs : p.nameEn} (Stock: {p.stock})
+                </option>
+              ))}
+            </select>
           </div>
-        </div>
-      )}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-[var(--nr-text)] mb-1">
+                {locale === 'es' ? 'Tipo de ajuste' : 'Adjustment type'}
+              </label>
+              <select
+                value={adjDirection}
+                onChange={(e) => setAdjDirection(e.target.value as 'IN' | 'OUT')}
+                className="nr-focus-ring w-full h-9 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-2.5 text-sm text-[var(--nr-text)]"
+              >
+                <option value="IN">{locale === 'es' ? 'Entrada (+)' : 'Stock In (+)'}</option>
+                <option value="OUT">{locale === 'es' ? 'Salida (-)' : 'Stock Out (-)'}</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-[var(--nr-text)] mb-1">
+                {locale === 'es' ? 'Cantidad' : 'Quantity'}
+              </label>
+              <input
+                type="number"
+                min="1"
+                required
+                value={adjQuantity}
+                onChange={(e) => setAdjQuantity(e.target.value)}
+                className="nr-focus-ring w-full h-9 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-2.5 text-sm font-mono-num text-[var(--nr-text)]"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-[var(--nr-text)] mb-1">
+              {locale === 'es' ? 'Motivo / Justificación' : 'Reason'}
+            </label>
+            <input
+              type="text"
+              required
+              value={adjReason}
+              onChange={(e) => setAdjReason(e.target.value)}
+              placeholder={
+                locale === 'es' ? 'Ej. Conteo físico mensual' : 'e.g. Monthly cycle count'
+              }
+              className="nr-focus-ring w-full h-9 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-2.5 text-sm text-[var(--nr-text)]"
+            />
+          </div>
+          <div className="flex justify-end gap-2 pt-3 border-t border-[var(--nr-border)]">
+            <button
+              type="button"
+              onClick={() => setAdjOpen(false)}
+              className="nr-focus-ring nr-transition h-9 px-3.5 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface)] text-xs font-semibold text-[var(--nr-text)] hover:bg-[var(--nr-surface-muted)]"
+            >
+              {t.common.cancel}
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="nr-focus-ring nr-transition h-9 px-4 rounded-lg bg-[var(--nr-primary)] hover:bg-[var(--nr-primary-hover)] text-xs font-semibold text-[var(--nr-primary-fg)] disabled:opacity-50"
+            >
+              {t.common.save}
+            </button>
+          </div>
+        </form>
+      </ErpModal>
     </div>
   );
 };
+

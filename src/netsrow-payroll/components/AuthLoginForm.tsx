@@ -190,10 +190,10 @@ export const AuthLoginForm: React.FC<AuthLoginFormProps> = ({
       {authErrorKind && authErrorMessage && (
         <div
           role="alert"
-          className={`rounded-md border p-3 text-xs flex items-start gap-2.5 ${
+          className={`rounded-xl border p-3 text-xs flex items-start gap-2.5 ${
             authErrorKind === 'unavailable'
-              ? 'border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200'
-              : 'border-red-300 dark:border-red-900 bg-red-50 dark:bg-red-950/40 text-red-900 dark:text-red-200'
+              ? 'border-[var(--nr-warning-border)] bg-[var(--nr-warning-bg)] text-[var(--nr-warning)]'
+              : 'border-[var(--nr-error-border)] bg-[var(--nr-error-bg)] text-[var(--nr-error)]'
           }`}
         >
           {authErrorKind === 'unavailable' ? (
@@ -207,18 +207,18 @@ export const AuthLoginForm: React.FC<AuthLoginFormProps> = ({
 
       <form onSubmit={handleSubmit} noValidate className="space-y-4">
         {pendingToken && authorizedTenants.length > 0 ? (
-          <div className="rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 p-4 space-y-3">
-            <div className="text-xs font-bold text-slate-900 dark:text-slate-100">
+          <div className="rounded-xl border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] p-4 space-y-3">
+            <div className="text-xs font-bold text-[var(--nr-text)]">
               {pt.auth.multiTenantTitle}
             </div>
-            <p className="text-xs text-slate-600 dark:text-slate-300">
+            <p className="text-xs text-[var(--nr-text-secondary)]">
               {pt.auth.multiTenantSubtitle}
             </p>
             <div className="space-y-2">
               {authorizedTenants.map((ten) => (
                 <label
                   key={ten.tenantId}
-                  className="flex items-center justify-between gap-2 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-2.5 text-xs cursor-pointer"
+                  className="nr-transition flex items-center justify-between gap-2 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface)] hover:border-[var(--nr-primary)] p-2.5 text-xs cursor-pointer"
                 >
                   <div className="flex items-center gap-2">
                     <input
@@ -228,13 +228,13 @@ export const AuthLoginForm: React.FC<AuthLoginFormProps> = ({
                       onChange={() => setChosenTenantId(ten.tenantId)}
                     />
                     <div>
-                      <div className="font-semibold">{ten.tenantName}</div>
-                      <div className="font-mono-num text-[11px] text-slate-500">
+                      <div className="font-semibold text-[var(--nr-text)]">{ten.tenantName}</div>
+                      <div className="font-mono-num text-[11px] text-[var(--nr-text-secondary)]">
                         {ten.tenantCode} · RNC {ten.rnc}
                       </div>
                     </div>
                   </div>
-                  <span className="text-[11px] text-emerald-700 dark:text-emerald-400 font-semibold">
+                  <span className="text-[11px] text-[var(--nr-primary)] font-semibold">
                     {locale === 'es' ? ten.roleLabelEs : ten.roleLabelEn}
                   </span>
                 </label>
@@ -246,7 +246,7 @@ export const AuthLoginForm: React.FC<AuthLoginFormProps> = ({
             <div>
               <label
                 htmlFor={`${portal}-email`}
-                className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1.5"
+                className="block text-xs font-semibold text-[var(--nr-text)] mb-1.5"
               >
                 {pt.auth.emailLabel}
               </label>
@@ -264,10 +264,10 @@ export const AuthLoginForm: React.FC<AuthLoginFormProps> = ({
                 }}
                 placeholder={pt.auth.emailPlaceholder}
                 aria-invalid={Boolean(fieldErrors.emailRequired)}
-                className="w-full h-10 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus-visible:outline-2 focus-visible:outline-emerald-600 focus-visible:outline-offset-1"
+                className="nr-focus-ring nr-transition w-full h-10 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-3 text-sm text-[var(--nr-text)] placeholder:text-[var(--nr-text-secondary)]/70"
               />
               {fieldErrors.emailRequired && (
-                <p className="mt-1 text-[11px] font-medium text-red-600 dark:text-red-400">
+                <p className="mt-1 text-[11px] font-medium text-[var(--nr-error)]">
                   {pt.auth.errEmailRequired}
                 </p>
               )}
@@ -277,7 +277,7 @@ export const AuthLoginForm: React.FC<AuthLoginFormProps> = ({
               <div className="flex items-center justify-between mb-1.5">
                 <label
                   htmlFor={`${portal}-password`}
-                  className="block text-xs font-semibold text-slate-700 dark:text-slate-200"
+                  className="block text-xs font-semibold text-[var(--nr-text)]"
                 >
                   {pt.auth.passwordLabel}
                 </label>
@@ -285,7 +285,7 @@ export const AuthLoginForm: React.FC<AuthLoginFormProps> = ({
                   <button
                     type="button"
                     onClick={onForgotPasswordClick}
-                    className="text-[11px] font-medium text-emerald-700 dark:text-emerald-400 hover:underline focus-visible:outline-2 focus-visible:outline-emerald-600 rounded"
+                    className="nr-focus-ring text-[11px] font-medium text-[var(--nr-primary)] hover:underline rounded"
                   >
                     {pt.auth.forgotPasswordDemo}
                   </button>
@@ -306,13 +306,13 @@ export const AuthLoginForm: React.FC<AuthLoginFormProps> = ({
                   }}
                   placeholder={pt.auth.passwordPlaceholder}
                   aria-invalid={Boolean(fieldErrors.passwordRequired)}
-                  className="w-full h-10 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 pl-3 pr-10 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus-visible:outline-2 focus-visible:outline-emerald-600 focus-visible:outline-offset-1"
+                  className="nr-focus-ring nr-transition w-full h-10 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] pl-3 pr-10 text-sm text-[var(--nr-text)] placeholder:text-[var(--nr-text-secondary)]/70"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((p) => !p)}
                   aria-label={showPassword ? pt.auth.hidePassword : pt.auth.showPassword}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 focus-visible:outline-2 focus-visible:outline-emerald-600"
+                  className="nr-focus-ring nr-transition absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-[var(--nr-text-secondary)] hover:text-[var(--nr-text)]"
                 >
                   {showPassword ? (
                     <EyeOff className="w-4 h-4" />
@@ -322,14 +322,14 @@ export const AuthLoginForm: React.FC<AuthLoginFormProps> = ({
                 </button>
               </div>
               {fieldErrors.passwordRequired && (
-                <p className="mt-1 text-[11px] font-medium text-red-600 dark:text-red-400">
+                <p className="mt-1 text-[11px] font-medium text-[var(--nr-error)]">
                   {pt.auth.errPasswordRequired}
                 </p>
               )}
             </div>
 
             {portal === 'PLATFORM' && (
-              <label className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300 cursor-pointer pt-0.5">
+              <label className="flex items-center gap-2 text-xs text-[var(--nr-text-secondary)] cursor-pointer pt-0.5">
                 <input
                   type="checkbox"
                   checked={requireTwoFactorDemo}
@@ -340,18 +340,18 @@ export const AuthLoginForm: React.FC<AuthLoginFormProps> = ({
             )}
           </>
         ) : (
-          <div className="rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 p-4 space-y-3">
-            <div className="flex items-center gap-2 text-xs font-bold text-slate-900 dark:text-slate-100">
-              <KeyRound className="w-4 h-4 text-emerald-600" />
+          <div className="rounded-xl border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] p-4 space-y-3">
+            <div className="flex items-center gap-2 text-xs font-bold text-[var(--nr-text)]">
+              <KeyRound className="w-4 h-4 text-[var(--nr-primary)]" />
               <span>{pt.auth.twoFactorTitle}</span>
             </div>
-            <p className="text-xs text-slate-600 dark:text-slate-300">
+            <p className="text-xs text-[var(--nr-text-secondary)]">
               {pt.auth.twoFactorDesc}
             </p>
             <div>
               <label
                 htmlFor="two-factor-code"
-                className="block text-xs font-semibold mb-1"
+                className="block text-xs font-semibold text-[var(--nr-text)] mb-1"
               >
                 {pt.auth.twoFactorCodeLabel}
               </label>
@@ -363,7 +363,7 @@ export const AuthLoginForm: React.FC<AuthLoginFormProps> = ({
                 value={twoFactorCode}
                 onChange={(e) => setTwoFactorCode(e.target.value)}
                 placeholder="246810"
-                className="w-full h-10 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 text-sm font-mono-num tracking-widest focus-visible:outline-2 focus-visible:outline-emerald-600"
+                className="nr-focus-ring nr-transition w-full h-10 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface)] px-3 text-sm font-mono-num tracking-widest text-[var(--nr-text)]"
               />
             </div>
             <button
@@ -372,7 +372,7 @@ export const AuthLoginForm: React.FC<AuthLoginFormProps> = ({
                 setTwoFactorStep(false);
                 setTwoFactorCode('');
               }}
-              className="text-xs font-medium text-slate-600 dark:text-slate-400 hover:underline"
+              className="nr-focus-ring text-xs font-medium text-[var(--nr-text-secondary)] hover:underline rounded"
             >
               {pt.auth.backToLogin}
             </button>
@@ -382,7 +382,7 @@ export const AuthLoginForm: React.FC<AuthLoginFormProps> = ({
         <button
           type="submit"
           disabled={isMutating}
-          className="w-full h-10 rounded-md bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-sm font-semibold text-white flex items-center justify-center gap-2 transition-colors focus-visible:outline-2 focus-visible:outline-emerald-500 focus-visible:outline-offset-2"
+          className="nr-focus-ring nr-transition w-full h-10 rounded-lg bg-[var(--nr-primary)] hover:bg-[var(--nr-primary-hover)] disabled:opacity-60 text-sm font-semibold text-[var(--nr-primary-fg)] flex items-center justify-center gap-2"
         >
           {isMutating ? (
             <>
@@ -405,14 +405,14 @@ export const AuthLoginForm: React.FC<AuthLoginFormProps> = ({
       </form>
 
       {/* Isolated Demo Controls (Not included in production builds) */}
-      <div className="rounded-md border border-amber-300/80 dark:border-amber-800/70 bg-amber-50/70 dark:bg-amber-950/30 p-3.5 space-y-3">
+      <div className="rounded-xl border border-[var(--nr-warning-border)] bg-[var(--nr-warning-bg)] p-3.5 space-y-3">
         <div className="flex items-start gap-2">
-          <ShieldAlert className="w-4 h-4 text-amber-700 dark:text-amber-400 shrink-0 mt-0.5" />
+          <ShieldAlert className="w-4 h-4 text-[var(--nr-warning)] shrink-0 mt-0.5" />
           <div>
-            <div className="text-xs font-bold text-amber-900 dark:text-amber-200">
+            <div className="text-xs font-bold text-[var(--nr-text)]">
               {pt.auth.demoProfilesTitle}
             </div>
-            <p className="text-[11px] text-amber-800/90 dark:text-amber-300/90 mt-0.5">
+            <p className="text-[11px] text-[var(--nr-text-secondary)] mt-0.5">
               {pt.auth.demoProfilesSubtitle}
             </p>
           </div>
@@ -424,27 +424,27 @@ export const AuthLoginForm: React.FC<AuthLoginFormProps> = ({
               key={prof.id}
               type="button"
               onClick={() => applyDemoProfile(prof)}
-              className="flex items-center justify-between gap-2 rounded border border-amber-300/70 dark:border-amber-800/70 bg-white dark:bg-slate-900 px-2.5 py-2 text-left text-xs hover:border-emerald-500 transition-colors"
+              className="nr-focus-ring nr-transition flex items-center justify-between gap-2 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface)] px-2.5 py-2 text-left text-xs hover:border-[var(--nr-primary)]"
             >
               <div className="min-w-0">
-                <div className="font-semibold text-slate-900 dark:text-slate-100 truncate">
+                <div className="font-semibold text-[var(--nr-text)] truncate">
                   {locale === 'es' ? prof.labelEs : prof.labelEn}
                 </div>
-                <div className="font-mono-num text-[11px] text-slate-500 truncate">
+                <div className="font-mono-num text-[11px] text-[var(--nr-text-secondary)] truncate">
                   {prof.email}
                 </div>
               </div>
-              <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 whitespace-nowrap shrink-0">
+              <span className="text-[11px] font-semibold text-[var(--nr-primary)] whitespace-nowrap shrink-0">
                 {locale === 'es' ? prof.badgeEs : prof.badgeEn}
               </span>
             </button>
           ))}
         </div>
 
-        <div className="pt-2 border-t border-amber-200/80 dark:border-amber-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div className="pt-2 border-t border-[var(--nr-warning-border)] flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <label
             htmlFor={`${portal}-fault-select`}
-            className="text-[11px] font-semibold text-amber-900 dark:text-amber-200"
+            className="text-[11px] font-semibold text-[var(--nr-text)]"
           >
             {pt.auth.faultSimLabel}
           </label>
@@ -452,7 +452,7 @@ export const AuthLoginForm: React.FC<AuthLoginFormProps> = ({
             id={`${portal}-fault-select`}
             value={simulatedFault}
             onChange={(e) => setSimulatedFault(e.target.value as SimulatedAuthFault)}
-            className="h-8 rounded border border-amber-300 dark:border-amber-700 bg-white dark:bg-slate-900 px-2 text-xs font-medium text-slate-800 dark:text-slate-200"
+            className="nr-focus-ring h-8 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface)] px-2 text-xs font-medium text-[var(--nr-text)]"
           >
             <option value="NONE">{pt.auth.faultNone}</option>
             <option value="SERVICE_UNAVAILABLE">{pt.auth.faultUnavailable}</option>

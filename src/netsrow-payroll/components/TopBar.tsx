@@ -83,14 +83,15 @@ export const TopBar: React.FC = () => {
     .join('');
 
   return (
-    <header className="sticky top-0 z-30 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
-      <div className="flex flex-wrap items-center justify-between gap-2 px-4 sm:px-5 py-2">
+    <header className="sticky top-0 z-30 bg-[var(--nr-surface)] border-b border-[var(--nr-border)]">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-4 sm:px-6 py-2.5">
         {/* Left zone: Mobile Menu + Live Entity & Branch + Active Payroll Status + Period */}
         <div className="flex items-center gap-2 min-w-0 flex-wrap">
           <button
+            id="nr-mobile-nav-trigger"
             type="button"
             onClick={() => setIsMobileNavOpen(true)}
-            className="lg:hidden inline-flex items-center justify-center w-9 h-9 rounded border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
+            className="nr-focus-ring nr-transition lg:hidden inline-flex items-center justify-center w-9 h-9 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface)] text-[var(--nr-text)] hover:bg-[var(--nr-surface-muted)] shrink-0"
             aria-label={t.navigation.openMenu}
           >
             <Menu className="w-4 h-4" />
@@ -100,27 +101,27 @@ export const TopBar: React.FC = () => {
           <button
             type="button"
             onClick={() => setActiveScreen('company')}
-            className="hidden xl:flex items-center gap-1.5 rounded border border-emerald-200/80 dark:border-emerald-800/60 bg-emerald-50/50 dark:bg-emerald-950/30 px-2.5 py-1 text-xs hover:bg-emerald-100/60 dark:hover:bg-emerald-950/50 transition-colors"
+            className="nr-focus-ring nr-transition hidden 2xl:flex items-center gap-1.5 rounded-lg border border-[var(--nr-success-border)] bg-[var(--nr-success-bg)] px-2.5 py-1 text-xs hover:opacity-90"
           >
-            <Building2 className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400 shrink-0" />
-            <span className="font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">
+            <Building2 className="w-3.5 h-3.5 text-[var(--nr-primary)] shrink-0" />
+            <span className="font-semibold text-[var(--nr-text)] whitespace-nowrap">
               {erpState.company.name}
             </span>
-            <span className="font-mono-num text-[11px] text-slate-500 dark:text-slate-400 whitespace-nowrap">
+            <span className="font-mono-num text-[11px] text-[var(--nr-text-secondary)] whitespace-nowrap">
               · {erpState.company.rnc}
             </span>
           </button>
 
           {/* Live Active Branch Selector (synced immediately when renamed in Sucursales) */}
-          <div className="flex items-center gap-1.5 rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 px-2 py-1 text-xs">
-            <Store className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+          <div className="flex items-center gap-1.5 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-2.5 py-1 text-xs h-8">
+            <Store className="w-3.5 h-3.5 text-[var(--nr-primary)] shrink-0" />
             <select
               aria-label={t.topBar.branchLabel}
               value={activeBranch?.id ?? ''}
               onChange={(e) => {
                 if (e.target.value) setActiveBranchId(e.target.value);
               }}
-              className="bg-transparent text-xs font-semibold text-slate-900 dark:text-slate-100 focus:outline-none cursor-pointer max-w-[140px] sm:max-w-[200px] truncate"
+              className="bg-transparent text-xs font-semibold text-[var(--nr-text)] focus:outline-none cursor-pointer max-w-[140px] sm:max-w-[200px] truncate"
             >
               {erpState.branches
                 .filter((b) => b.active)
@@ -128,7 +129,7 @@ export const TopBar: React.FC = () => {
                   <option
                     key={b.id}
                     value={b.id}
-                    className="bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100"
+                    className="bg-[var(--nr-surface)] text-[var(--nr-text)]"
                   >
                     {b.name}
                   </option>
@@ -139,14 +140,14 @@ export const TopBar: React.FC = () => {
           {/* Active payroll status pill (when Payroll module enabled) */}
           {isPayrollScreen && enabledModules.includes('PAYROLL') && (
             <div
-              className={`hidden md:inline-flex items-center rounded border px-2.5 py-1 text-[11px] font-bold tracking-wide whitespace-nowrap ${bannerColorClasses}`}
+              className={`hidden md:inline-flex items-center rounded-md border px-2.5 py-1 text-[11px] font-bold tracking-wide whitespace-nowrap ${bannerColorClasses}`}
             >
               {statusBannerText}
             </div>
           )}
 
           {tenantStatus === 'TRIAL' && (
-            <span className="hidden md:inline-flex items-center rounded border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 text-[11px] font-bold text-amber-800 dark:text-amber-300">
+            <span className="hidden md:inline-flex items-center rounded-md border border-[var(--nr-warning-border)] bg-[var(--nr-warning-bg)] px-2 py-0.5 text-[11px] font-bold text-[var(--nr-warning)]">
               {locale === 'es' ? 'Período de prueba' : 'Trial'}
             </span>
           )}
@@ -158,7 +159,7 @@ export const TopBar: React.FC = () => {
             onChange={(e) => {
               if (e.target.value) selectPeriod(e.target.value, false);
             }}
-            className="h-8 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 text-xs font-semibold text-slate-900 dark:text-slate-100 focus:outline-none focus:border-emerald-500 max-w-[170px] sm:max-w-none truncate"
+            className="nr-focus-ring h-8 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface)] px-2.5 text-xs font-semibold text-[var(--nr-text)] max-w-[170px] sm:max-w-none truncate"
           >
             {periods.length === 0 && (
               <option value="">{t.topBar.noPeriodSelected}</option>
@@ -178,9 +179,9 @@ export const TopBar: React.FC = () => {
             disabled={isMutating}
             onClick={() => resetDemoData()}
             title={t.topBar.resetDemoData}
-            className="hidden sm:inline-flex items-center gap-1 h-8 px-2.5 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors whitespace-nowrap"
+            className="nr-focus-ring nr-transition hidden sm:inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface)] text-xs font-medium text-[var(--nr-text)] hover:bg-[var(--nr-surface-muted)] disabled:opacity-50 whitespace-nowrap"
           >
-            <RotateCcw className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+            <RotateCcw className="w-3.5 h-3.5 text-[var(--nr-warning)]" />
             <span className="hidden 2xl:inline">{t.topBar.resetDemoData}</span>
           </button>
 
@@ -188,15 +189,15 @@ export const TopBar: React.FC = () => {
           <div
             role="group"
             aria-label={t.topBar.languageLabel}
-            className="inline-flex items-center rounded border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 p-0.5 shrink-0"
+            className="inline-flex items-center rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-muted)] p-0.5 shrink-0"
           >
             <button
               type="button"
               onClick={() => setLocale('es')}
-              className={`px-2 py-1 text-[11px] font-semibold rounded-sm transition-colors whitespace-nowrap ${
+              className={`nr-focus-ring nr-transition px-2 py-1 text-[11px] font-semibold rounded-md whitespace-nowrap ${
                 locale === 'es'
-                  ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                  ? 'bg-[var(--nr-surface)] text-[var(--nr-text)] shadow-xs'
+                  : 'text-[var(--nr-text-secondary)] hover:text-[var(--nr-text)]'
               }`}
             >
               ES
@@ -204,10 +205,10 @@ export const TopBar: React.FC = () => {
             <button
               type="button"
               onClick={() => setLocale('en')}
-              className={`px-2 py-1 text-[11px] font-semibold rounded-sm transition-colors whitespace-nowrap ${
+              className={`nr-focus-ring nr-transition px-2 py-1 text-[11px] font-semibold rounded-md whitespace-nowrap ${
                 locale === 'en'
-                  ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                  ? 'bg-[var(--nr-surface)] text-[var(--nr-text)] shadow-xs'
+                  : 'text-[var(--nr-text-secondary)] hover:text-[var(--nr-text)]'
               }`}
             >
               EN
@@ -219,12 +220,12 @@ export const TopBar: React.FC = () => {
             type="button"
             onClick={toggleTheme}
             aria-label={theme === 'light' ? t.topBar.themeDark : t.topBar.themeLight}
-            className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shrink-0"
+            className="nr-focus-ring nr-transition inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface)] text-xs font-medium text-[var(--nr-text)] hover:bg-[var(--nr-surface-muted)] shrink-0"
           >
             {theme === 'light' ? (
-              <Moon className="w-3.5 h-3.5 text-slate-600" />
+              <Moon className="w-3.5 h-3.5 text-[var(--nr-text-secondary)]" />
             ) : (
-              <Sun className="w-3.5 h-3.5 text-amber-400" />
+              <Sun className="w-3.5 h-3.5 text-[var(--nr-warning)]" />
             )}
             <span className="hidden sm:inline whitespace-nowrap">
               {theme === 'light' ? t.topBar.themeLight : t.topBar.themeDark}
@@ -233,29 +234,29 @@ export const TopBar: React.FC = () => {
 
           {/* Clearly labeled Demo Role Switcher */}
           {isDemoRoleControlEnabled && (
-            <div className="flex items-center gap-1.5 rounded border border-amber-300/80 dark:border-amber-700/70 bg-amber-50/70 dark:bg-amber-950/35 px-2 py-1">
+            <div className="flex items-center gap-1.5 rounded-lg border border-[var(--nr-warning-border)] bg-[var(--nr-warning-bg)] px-2.5 py-1 h-8">
               <ShieldAlert
-                className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400 shrink-0"
+                className="w-3.5 h-3.5 text-[var(--nr-warning)] shrink-0"
                 aria-hidden="true"
               />
-              <span className="hidden 2xl:inline text-[10px] font-bold uppercase tracking-wider text-amber-800 dark:text-amber-300 whitespace-nowrap">
+              <span className="hidden 2xl:inline text-[10px] font-bold uppercase tracking-wider text-[var(--nr-warning)] whitespace-nowrap">
                 {t.topBar.demoControlBadge}:
               </span>
               <select
                 aria-label={t.topBar.demoRoleLabel}
                 value={demoRole}
                 onChange={(e) => setDemoRole(e.target.value as DemoRoleKey)}
-                className="bg-transparent text-xs font-semibold text-amber-900 dark:text-amber-200 focus:outline-none cursor-pointer max-w-[140px] sm:max-w-[190px] truncate"
+                className="bg-transparent text-xs font-semibold text-[var(--nr-warning)] focus:outline-none cursor-pointer max-w-[140px] sm:max-w-[190px] truncate"
               >
                 <option
                   value="payroll_admin"
-                  className="bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100"
+                  className="bg-[var(--nr-surface)] text-[var(--nr-text)]"
                 >
                   {t.topBar.roleAdmin}
                 </option>
                 <option
                   value="supervisor_readonly"
-                  className="bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100"
+                  className="bg-[var(--nr-surface)] text-[var(--nr-text)]"
                 >
                   {t.topBar.roleSupervisor}
                 </option>
@@ -264,18 +265,18 @@ export const TopBar: React.FC = () => {
           )}
 
           {/* User badge */}
-          <div className="hidden md:flex items-center gap-2 pl-2 border-l border-slate-200 dark:border-slate-700">
+          <div className="hidden md:flex items-center gap-2 pl-2 border-l border-[var(--nr-border)]">
             <div className="text-right leading-tight">
-              <div className="text-xs font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">
+              <div className="text-xs font-semibold text-[var(--nr-text)] whitespace-nowrap">
                 {actorName}
               </div>
-              <div className="text-[10px] text-slate-500 dark:text-slate-400 whitespace-nowrap">
+              <div className="text-[10px] text-[var(--nr-text-secondary)] whitespace-nowrap">
                 {demoRole === 'payroll_admin'
                   ? t.topBar.roleTitleAdmin
                   : t.topBar.roleTitleSupervisor}
               </div>
             </div>
-            <div className="w-8 h-8 rounded-full bg-slate-900 dark:bg-emerald-700 text-white text-xs font-bold flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 rounded-full bg-[#081321] dark:bg-[var(--nr-primary)] text-white dark:text-[var(--nr-primary-fg)] text-xs font-bold flex items-center justify-center shrink-0">
               {initials}
             </div>
           </div>
@@ -285,7 +286,7 @@ export const TopBar: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsMobileBreakdownOpen(true)}
-              className="xl:hidden inline-flex items-center gap-1.5 h-8 px-2.5 rounded border border-emerald-600/30 bg-emerald-50 dark:bg-emerald-950/50 text-xs font-semibold text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-colors shrink-0 whitespace-nowrap"
+              className="nr-focus-ring nr-transition xl:hidden inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg border border-[var(--nr-success-border)] bg-[var(--nr-success-bg)] text-xs font-semibold text-[var(--nr-success)] shrink-0 whitespace-nowrap"
             >
               <PanelRightOpen className="w-3.5 h-3.5" />
               <span>{t.topBar.openBreakdown}</span>
@@ -297,9 +298,9 @@ export const TopBar: React.FC = () => {
               type="button"
               onClick={onLogout}
               title={locale === 'es' ? 'Cerrar sesión' : 'Sign out'}
-              className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shrink-0 whitespace-nowrap"
+              className="nr-focus-ring nr-transition inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface)] text-xs font-semibold text-[var(--nr-text)] hover:bg-[var(--nr-surface-muted)] shrink-0 whitespace-nowrap"
             >
-              <LogOut className="w-3.5 h-3.5 text-slate-500" />
+              <LogOut className="w-3.5 h-3.5 text-[var(--nr-text-secondary)]" />
               <span className="hidden sm:inline">
                 {locale === 'es' ? 'Cerrar sesión' : 'Sign out'}
               </span>

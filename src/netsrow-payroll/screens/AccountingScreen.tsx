@@ -4,9 +4,13 @@ import {
   Eye,
   Plus,
   RefreshCw,
-  X,
 } from 'lucide-react';
 import { DataTable, DataTableColumn } from '../components/DataTable';
+import {
+  ErpModal,
+  ErpPageHeader,
+  ErpSurfaceCard,
+} from '../components/ErpUiPrimitives';
 import { MoneyCell } from '../components/MoneyCell';
 import { StatusBadge } from '../components/StatusBadge';
 import { usePayrollWorkspace } from '../context/PayrollWorkspaceContext';
@@ -101,6 +105,7 @@ export const AccountingScreen: React.FC = () => {
   const [accType, setAccType] = useState<AccountType>('ASSET');
 
   // New Journal Entry modal
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [jeModalOpen, setJeModalOpen] = useState(false);
   const [jeDate, setJeDate] = useState('2026-11-24');
   const [jePeriodId, setJePeriodId] = useState(
@@ -211,47 +216,57 @@ export const AccountingScreen: React.FC = () => {
       accType === 'ASSET' || accType === 'COST' || accType === 'EXPENSE'
         ? 'DEBIT'
         : 'CREDIT';
-    await upsertGlAccount({
-      id: editAccId ?? `acc-${Date.now()}`,
-      code: accCode.trim(),
-      nameEs: accName.trim(),
-      nameEn: accName.trim(),
-      type: accType,
-      normalSide,
-      active: true,
-    });
-    setAccModalOpen(false);
+    setIsSubmitting(true);
+    try {
+      await upsertGlAccount({
+        id: editAccId ?? `acc-${Date.now()}`,
+        code: accCode.trim(),
+        nameEs: accName.trim(),
+        nameEn: accName.trim(),
+        type: accType,
+        normalSide,
+        active: true,
+      });
+      setAccModalOpen(false);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const saveJournalEntry = async (e: React.FormEvent) => {
     e.preventDefault();
     const amt = Number(jeAmount);
     if (!amt || amt <= 0 || jeDebitAcc === jeCreditAcc) return;
-    await createJournalEntry({
-      date: jeDate,
-      periodId: jePeriodId || erpState.accountingPeriods[0]?.id || '',
-      reference: jeReference.trim(),
-      memo: jeMemo.trim(),
-      lines: [
-        {
-          accountId: jeDebitAcc,
-          descriptionEs: jeMemo.trim() || 'Débito asiento manual',
-          descriptionEn: jeMemo.trim() || 'Manual entry debit',
-          debit: amt,
-          credit: 0,
-        },
-        {
-          accountId: jeCreditAcc,
-          descriptionEs: jeMemo.trim() || 'Crédito asiento manual',
-          descriptionEn: jeMemo.trim() || 'Manual entry credit',
-          debit: 0,
-          credit: amt,
-        },
-      ],
-    });
-    setJeModalOpen(false);
-    setJeReference('');
-    setJeMemo('');
+    setIsSubmitting(true);
+    try {
+      await createJournalEntry({
+        date: jeDate,
+        periodId: jePeriodId || erpState.accountingPeriods[0]?.id || '',
+        reference: jeReference.trim(),
+        memo: jeMemo.trim(),
+        lines: [
+          {
+            accountId: jeDebitAcc,
+            descriptionEs: jeMemo.trim() || 'Débito asiento manual',
+            descriptionEn: jeMemo.trim() || 'Manual entry debit',
+            debit: amt,
+            credit: 0,
+          },
+          {
+            accountId: jeCreditAcc,
+            descriptionEs: jeMemo.trim() || 'Crédito asiento manual',
+            descriptionEn: jeMemo.trim() || 'Manual entry credit',
+            debit: 0,
+            credit: amt,
+          },
+        ],
+      });
+      setJeModalOpen(false);
+      setJeReference('');
+      setJeMemo('');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const accountCols: DataTableColumn<GlAccount>[] = [
@@ -260,7 +275,7 @@ export const AccountingScreen: React.FC = () => {
       header: t.common.code,
       stickyLeft: true,
       render: (a) => (
-        <span className="font-mono-num text-xs font-bold text-emerald-700 dark:text-emerald-400">
+        <span className="font-mono-num text-xs font-bold text-[var(--nr-primary)]">
           {a.code}
         </span>
       ),
@@ -270,7 +285,9 @@ export const AccountingScreen: React.FC = () => {
       header: locale === 'es' ? 'Cuenta contable' : 'GL Account',
       minWidthClass: 'min-w-[200px]',
       render: (a) => (
-        <span className="font-semibold">{locale === 'es' ? a.nameEs : a.nameEn}</span>
+        <span className="font-semibold text-[var(--nr-text)]">
+          {locale === 'es' ? a.nameEs : a.nameEn}
+        </span>
       ),
     },
     {
@@ -302,7 +319,7 @@ export const AccountingScreen: React.FC = () => {
         <button
           type="button"
           onClick={() => openAccountLedger(a.id)}
-          className="rounded border border-emerald-600/30 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 text-xs font-semibold text-emerald-800 dark:text-emerald-300"
+          className="nr-focus-ring nr-transition rounded-lg border border-[var(--nr-success-border)] bg-[var(--nr-success-bg)] px-2.5 py-1 text-xs font-semibold text-[var(--nr-success)] hover:opacity-90"
         >
           {locale === 'es' ? 'Ver Mayor' : 'Ledger'}
         </button>
@@ -350,7 +367,7 @@ export const AccountingScreen: React.FC = () => {
           onChange={(e) =>
             setAccountingPeriodStatus(p.id, e.target.value as AccountingPeriod['status'])
           }
-          className="h-8 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 text-xs font-semibold"
+          className="nr-focus-ring nr-transition h-8 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-2 text-xs font-semibold text-[var(--nr-text)]"
         >
           <option value="OPEN">OPEN</option>
           <option value="CLOSING">CLOSING</option>
@@ -372,10 +389,12 @@ export const AccountingScreen: React.FC = () => {
       header: locale === 'es' ? 'Asiento' : 'Journal #',
       render: (r) => (
         <div>
-          <div className="font-mono-num text-xs font-bold text-emerald-700 dark:text-emerald-400">
+          <div className="font-mono-num text-xs font-bold text-[var(--nr-primary)]">
             {r.entryNumber}
           </div>
-          <div className="font-mono-num text-[11px] text-slate-500">{r.reference}</div>
+          <div className="font-mono-num text-[11px] text-[var(--nr-text-secondary)]">
+            {r.reference}
+          </div>
         </div>
       ),
     },
@@ -414,9 +433,9 @@ export const AccountingScreen: React.FC = () => {
             const je = erpState.journalEntries.find((j) => j.id === r.entryId) ?? null;
             setInspectEntry(je);
           }}
-          className="inline-flex items-center gap-1 rounded border border-slate-200 dark:border-slate-700 px-2.5 py-1 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-800"
+          className="nr-focus-ring nr-transition inline-flex items-center gap-1 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface)] px-2.5 py-1 text-xs font-semibold text-[var(--nr-text)] hover:border-[var(--nr-primary)] hover:bg-[var(--nr-surface-muted)]"
         >
-          <Eye className="w-3 h-3 text-emerald-600" />
+          <Eye className="w-3 h-3 text-[var(--nr-primary)]" />
           <span>{locale === 'es' ? 'Asiento origen' : 'Source entry'}</span>
         </button>
       ),
@@ -429,7 +448,7 @@ export const AccountingScreen: React.FC = () => {
       header: t.common.code,
       stickyLeft: true,
       render: (r) => (
-        <span className="font-mono-num text-xs font-bold text-emerald-700 dark:text-emerald-400">
+        <span className="font-mono-num text-xs font-bold text-[var(--nr-primary)]">
           {r.code}
         </span>
       ),
@@ -438,7 +457,7 @@ export const AccountingScreen: React.FC = () => {
       key: 'name',
       header: locale === 'es' ? 'Cuenta' : 'Account',
       minWidthClass: 'min-w-[200px]',
-      render: (r) => <span className="font-semibold text-xs">{r.name}</span>,
+      render: (r) => <span className="font-semibold text-xs text-[var(--nr-text)]">{r.name}</span>,
     },
     {
       key: 'deb',
@@ -479,10 +498,12 @@ export const AccountingScreen: React.FC = () => {
         const acc = accountMap.get(it.accountId);
         return (
           <div>
-            <div className="font-semibold text-xs">
+            <div className="font-semibold text-xs text-[var(--nr-text)]">
               {acc ? `${acc.code} · ${locale === 'es' ? acc.nameEs : acc.nameEn}` : it.accountId}
             </div>
-            <div className="font-mono-num text-[11px] text-slate-500">{it.reference}</div>
+            <div className="font-mono-num text-[11px] text-[var(--nr-text-secondary)]">
+              {it.reference}
+            </div>
           </div>
         );
       },
@@ -527,9 +548,9 @@ export const AccountingScreen: React.FC = () => {
         <button
           type="button"
           onClick={() => toggleReconciliationItem(it.id)}
-          className="inline-flex items-center gap-1 rounded border border-slate-200 dark:border-slate-700 px-2.5 py-1 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-800"
+          className="nr-focus-ring nr-transition inline-flex items-center gap-1 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface)] px-2.5 py-1 text-xs font-semibold text-[var(--nr-text)] hover:border-[var(--nr-primary)] hover:bg-[var(--nr-surface-muted)]"
         >
-          <RefreshCw className="w-3 h-3" />
+          <RefreshCw className="w-3 h-3 text-[var(--nr-primary)]" />
           <span>
             {it.status === 'MATCHED'
               ? locale === 'es'
@@ -546,51 +567,45 @@ export const AccountingScreen: React.FC = () => {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="font-display text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100">
-              {t.navigation.accounting}
-            </h1>
-            <StatusBadge label={t.topBar.demoOnlyTag} tone="amber" />
-          </div>
-          <p className="mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-            {locale === 'es'
-              ? 'Plan de cuentas, Diario, Mayor general y Balanza de comprobación alimentados por los mismos asientos contables.'
-              : 'Chart of accounts, Journal, General Ledger, and Trial Balance powered by the exact same journal entries.'}
-          </p>
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          {activeTab === 'accounts' && (
+      <ErpPageHeader
+        title={t.navigation.accounting}
+        subtitle={
+          locale === 'es'
+            ? 'Plan de cuentas, Diario, Mayor general y Balanza de comprobación alimentados por los mismos asientos contables.'
+            : 'Chart of accounts, Journal, General Ledger, and Trial Balance powered by the exact same journal entries.'
+        }
+        badge={<StatusBadge label={t.topBar.demoOnlyTag} tone="amber" />}
+        actions={
+          <>
+            {activeTab === 'accounts' && (
+              <button
+                type="button"
+                onClick={() => {
+                  setEditAccId(null);
+                  setAccCode('');
+                  setAccName('');
+                  setAccType('ASSET');
+                  setAccModalOpen(true);
+                }}
+                className="nr-focus-ring nr-transition inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface)] hover:border-[var(--nr-primary)] text-xs font-semibold text-[var(--nr-text)] whitespace-nowrap"
+              >
+                <Plus className="w-4 h-4" />
+                <span>{locale === 'es' ? 'Nueva cuenta' : 'New account'}</span>
+              </button>
+            )}
             <button
               type="button"
-              onClick={() => {
-                setEditAccId(null);
-                setAccCode('');
-                setAccName('');
-                setAccType('ASSET');
-                setAccModalOpen(true);
-              }}
-              className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded bg-emerald-600 hover:bg-emerald-700 text-xs font-semibold text-white"
+              onClick={() => setJeModalOpen(true)}
+              className="nr-focus-ring nr-transition inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg bg-[var(--nr-primary)] hover:bg-[var(--nr-primary-hover)] text-xs font-semibold text-[var(--nr-primary-fg)] whitespace-nowrap"
             >
               <Plus className="w-4 h-4" />
-              <span>{locale === 'es' ? 'Nueva cuenta' : 'New account'}</span>
+              <span>{locale === 'es' ? 'Nuevo asiento' : 'New journal entry'}</span>
             </button>
-          )}
-          <button
-            type="button"
-            onClick={() => setJeModalOpen(true)}
-            className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded bg-emerald-600 hover:bg-emerald-700 text-xs font-semibold text-white"
-          >
-            <Plus className="w-4 h-4" />
-            <span>{locale === 'es' ? 'Nuevo asiento' : 'New journal entry'}</span>
-          </button>
-        </div>
-      </div>
+          </>
+        }
+      />
 
-      {/* 6 Submenu Tabs */}
-      <div className="flex flex-wrap items-center gap-1 border-b border-slate-200 dark:border-slate-800">
+      <div className="flex flex-wrap items-center gap-1 border-b border-[var(--nr-border)]">
         {(
           [
             { id: 'accounts', label: t.navigation.accountingAccounts },
@@ -608,10 +623,10 @@ export const AccountingScreen: React.FC = () => {
             key={tab.id}
             type="button"
             onClick={() => setTab(tab.id)}
-            className={`px-3.5 py-2.5 text-xs font-semibold border-b-2 transition-colors whitespace-nowrap ${
+            className={`nr-focus-ring nr-transition px-3.5 py-2.5 text-xs font-semibold border-b-2 whitespace-nowrap ${
               activeTab === tab.id
-                ? 'border-emerald-600 text-emerald-700 dark:border-emerald-400 dark:text-emerald-300'
-                : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                ? 'border-[var(--nr-primary)] text-[var(--nr-primary)]'
+                : 'border-transparent text-[var(--nr-text-secondary)] hover:text-[var(--nr-text)]'
             }`}
           >
             {tab.label}
@@ -643,21 +658,18 @@ export const AccountingScreen: React.FC = () => {
             const totalD = round2(je.lines.reduce((s, l) => s + l.debit, 0));
             const totalC = round2(je.lines.reduce((s, l) => s + l.credit, 0));
             return (
-              <div
-                key={je.id}
-                className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 space-y-3"
-              >
+              <ErpSurfaceCard key={je.id} padding="md" className="space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-mono-num text-xs font-bold text-emerald-700 dark:text-emerald-400">
+                    <span className="font-mono-num text-xs font-bold text-[var(--nr-primary)]">
                       {je.number}
                     </span>
                     <StatusBadge label={je.sourceModule} tone="neutral" />
-                    <span className="font-mono-num text-xs text-slate-500">
+                    <span className="font-mono-num text-xs text-[var(--nr-text-secondary)]">
                       {je.date} · Ref: {je.reference}
                     </span>
                   </div>
-                  <div className="text-xs font-semibold text-slate-700 dark:text-slate-200">
+                  <div className="text-xs font-semibold text-[var(--nr-text)]">
                     {locale === 'es' ? je.memoEs : je.memoEn}
                   </div>
                 </div>
@@ -665,7 +677,7 @@ export const AccountingScreen: React.FC = () => {
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs">
                     <thead>
-                      <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500">
+                      <tr className="border-b border-[var(--nr-border)] text-[var(--nr-text-secondary)]">
                         <th className="py-1.5 text-left font-semibold">
                           {locale === 'es' ? 'Cuenta' : 'Account'}
                         </th>
@@ -680,7 +692,7 @@ export const AccountingScreen: React.FC = () => {
                         </th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                    <tbody className="divide-y divide-[var(--nr-border)]">
                       {je.lines.map((line) => {
                         const acc = accountMap.get(line.accountId);
                         return (
@@ -689,12 +701,12 @@ export const AccountingScreen: React.FC = () => {
                               <button
                                 type="button"
                                 onClick={() => openAccountLedger(line.accountId)}
-                                className="font-mono-num font-semibold text-emerald-700 dark:text-emerald-400 hover:underline"
+                                className="nr-focus-ring font-mono-num font-semibold text-[var(--nr-primary)] hover:underline"
                               >
                                 {acc ? `${acc.code} · ${locale === 'es' ? acc.nameEs : acc.nameEn}` : line.accountId}
                               </button>
                             </td>
-                            <td className="py-1.5 text-slate-600 dark:text-slate-300">
+                            <td className="py-1.5 text-[var(--nr-text-secondary)]">
                               {locale === 'es' ? line.descriptionEs : line.descriptionEn}
                             </td>
                             <td className="py-1.5 text-right">
@@ -706,8 +718,8 @@ export const AccountingScreen: React.FC = () => {
                           </tr>
                         );
                       })}
-                      <tr className="bg-slate-50 dark:bg-slate-800/50 font-bold">
-                        <td colSpan={2} className="py-1.5 px-2 text-right">
+                      <tr className="bg-[var(--nr-surface-muted)] font-bold">
+                        <td colSpan={2} className="py-1.5 px-2 text-right text-[var(--nr-text)]">
                           {locale === 'es' ? 'Totales cuadrados' : 'Balanced totals'}
                         </td>
                         <td className="py-1.5 text-right">
@@ -720,7 +732,7 @@ export const AccountingScreen: React.FC = () => {
                     </tbody>
                   </table>
                 </div>
-              </div>
+              </ErpSurfaceCard>
             );
           })}
         </div>
@@ -728,45 +740,49 @@ export const AccountingScreen: React.FC = () => {
 
       {activeTab === 'ledger' && (
         <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
-            <div className="flex-1 max-w-md">
-              <label className="block text-[11px] font-semibold uppercase text-slate-500 mb-1">
-                {locale === 'es' ? 'Cuenta en Mayor general' : 'General Ledger Account'}
-              </label>
-              <select
-                value={ledgerAccount?.id ?? ''}
-                onChange={(e) => setSelectedAccountId(e.target.value)}
-                className="w-full h-9 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 text-xs font-semibold"
-              >
-                {erpState.glAccounts.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.code} · {locale === 'es' ? a.nameEs : a.nameEn}
-                  </option>
-                ))}
-              </select>
-            </div>
-            {ledgerAccount && (
-              <div className="flex items-center gap-4 text-xs">
-                <div>
-                  <span className="text-slate-500 block">
-                    {locale === 'es' ? 'Naturaleza' : 'Normal side'}
-                  </span>
-                  <span className="font-bold">{ledgerAccount.normalSide}</span>
-                </div>
-                <div>
-                  <span className="text-slate-500 block">
-                    {locale === 'es' ? 'Saldo actual' : 'Current balance'}
-                  </span>
-                  <MoneyCell
-                    amount={ledgerRows[ledgerRows.length - 1]?.runningBalance ?? 0}
-                    locale={locale}
-                    size="lg"
-                    emphasize
-                  />
-                </div>
+          <ErpSurfaceCard padding="md">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex-1 max-w-md">
+                <label className="block text-[11px] font-semibold uppercase tracking-wider text-[var(--nr-text-secondary)] mb-1">
+                  {locale === 'es' ? 'Cuenta en Mayor general' : 'General Ledger Account'}
+                </label>
+                <select
+                  value={ledgerAccount?.id ?? ''}
+                  onChange={(e) => setSelectedAccountId(e.target.value)}
+                  className="nr-focus-ring nr-transition w-full h-9 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-3 text-xs font-semibold text-[var(--nr-text)]"
+                >
+                  {erpState.glAccounts.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.code} · {locale === 'es' ? a.nameEs : a.nameEn}
+                    </option>
+                  ))}
+                </select>
               </div>
-            )}
-          </div>
+              {ledgerAccount && (
+                <div className="flex items-center gap-4 text-xs">
+                  <div>
+                    <span className="text-[var(--nr-text-secondary)] block">
+                      {locale === 'es' ? 'Naturaleza' : 'Normal side'}
+                    </span>
+                    <span className="font-bold text-[var(--nr-text)]">
+                      {ledgerAccount.normalSide}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[var(--nr-text-secondary)] block">
+                      {locale === 'es' ? 'Saldo actual' : 'Current balance'}
+                    </span>
+                    <MoneyCell
+                      amount={ledgerRows[ledgerRows.length - 1]?.runningBalance ?? 0}
+                      locale={locale}
+                      size="lg"
+                      emphasize
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          </ErpSurfaceCard>
 
           <DataTable
             columns={ledgerCols}
@@ -779,16 +795,16 @@ export const AccountingScreen: React.FC = () => {
 
       {activeTab === 'trial_balance' && (
         <div className="space-y-4">
-          <div className="rounded-lg border border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/30 p-3 flex flex-wrap items-center justify-between gap-3 text-xs">
-            <div className="flex items-center gap-2 font-semibold text-emerald-900 dark:text-emerald-200">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+          <div className="rounded-xl border border-[var(--nr-success-border)] bg-[var(--nr-success-bg)] p-3.5 flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2 font-semibold text-[var(--nr-success)]">
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
               <span>
                 {locale === 'es'
                   ? 'Haz clic en cualquier cuenta de la Balanza para abrir su Mayor general y consultar el asiento de origen.'
                   : 'Click any account row to open its General Ledger and inspect the source journal entry.'}
               </span>
             </div>
-            <div className="flex items-center gap-4 font-mono-num">
+            <div className="flex items-center gap-4 font-mono-num text-[var(--nr-text)] font-semibold">
               <span>
                 {locale === 'es' ? 'Débitos:' : 'Debits:'} RD${trialTotals.debit.toFixed(2)}
               </span>
@@ -817,46 +833,63 @@ export const AccountingScreen: React.FC = () => {
         />
       )}
 
-      {/* Inspect Source Journal Entry Modal */}
-      {inspectEntry && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60">
-          <div className="w-full max-w-2xl rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xl">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-800">
-              <div>
-                <div className="font-mono-num text-sm font-bold text-emerald-700 dark:text-emerald-400">
-                  {locale === 'es' ? 'Asiento de origen' : 'Source journal entry'} ·{' '}
-                  {inspectEntry.number}
-                </div>
-                <div className="text-xs text-slate-500">
-                  {inspectEntry.date} · {inspectEntry.sourceModule} · Ref: {inspectEntry.reference}
-                </div>
-              </div>
-              <button type="button" onClick={() => setInspectEntry(null)} className="p-1">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            <div className="p-4 space-y-3">
-              <p className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                {locale === 'es' ? inspectEntry.memoEs : inspectEntry.memoEn}
-              </p>
+      <ErpModal
+        open={Boolean(inspectEntry)}
+        onClose={() => setInspectEntry(null)}
+        title={
+          inspectEntry
+            ? `${locale === 'es' ? 'Asiento de origen' : 'Source journal entry'} · ${inspectEntry.number}`
+            : ''
+        }
+        subtitle={
+          inspectEntry
+            ? `${inspectEntry.date} · ${inspectEntry.sourceModule} · Ref: ${inspectEntry.reference}`
+            : undefined
+        }
+        maxWidthClass="max-w-2xl"
+        closeLabel={t.common.close}
+        footer={
+          <button
+            type="button"
+            onClick={() => setInspectEntry(null)}
+            className="nr-focus-ring nr-transition h-9 px-4 rounded-lg bg-[var(--nr-primary)] hover:bg-[var(--nr-primary-hover)] text-xs font-semibold text-[var(--nr-primary-fg)]"
+          >
+            {t.common.close}
+          </button>
+        }
+      >
+        {inspectEntry && (
+          <div className="space-y-3">
+            <p className="text-xs font-medium text-[var(--nr-text-secondary)]">
+              {locale === 'es' ? inspectEntry.memoEs : inspectEntry.memoEn}
+            </p>
+            <div className="overflow-x-auto">
               <table className="w-full text-xs">
                 <thead>
-                  <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500">
-                    <th className="py-1.5 text-left">{locale === 'es' ? 'Cuenta' : 'Account'}</th>
-                    <th className="py-1.5 text-left">{locale === 'es' ? 'Concepto' : 'Detail'}</th>
-                    <th className="py-1.5 text-right">{locale === 'es' ? 'Débito' : 'Debit'}</th>
-                    <th className="py-1.5 text-right">{locale === 'es' ? 'Crédito' : 'Credit'}</th>
+                  <tr className="border-b border-[var(--nr-border)] text-[var(--nr-text-secondary)]">
+                    <th className="py-1.5 text-left font-semibold">
+                      {locale === 'es' ? 'Cuenta' : 'Account'}
+                    </th>
+                    <th className="py-1.5 text-left font-semibold">
+                      {locale === 'es' ? 'Concepto' : 'Detail'}
+                    </th>
+                    <th className="py-1.5 text-right font-semibold">
+                      {locale === 'es' ? 'Débito' : 'Debit'}
+                    </th>
+                    <th className="py-1.5 text-right font-semibold">
+                      {locale === 'es' ? 'Crédito' : 'Credit'}
+                    </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                <tbody className="divide-y divide-[var(--nr-border)]">
                   {inspectEntry.lines.map((line) => {
                     const acc = accountMap.get(line.accountId);
                     return (
                       <tr key={line.id}>
-                        <td className="py-2 font-mono-num font-semibold">
+                        <td className="py-2 font-mono-num font-semibold text-[var(--nr-text)]">
                           {acc ? `${acc.code} · ${locale === 'es' ? acc.nameEs : acc.nameEn}` : line.accountId}
                         </td>
-                        <td className="py-2">
+                        <td className="py-2 text-[var(--nr-text-secondary)]">
                           {locale === 'es' ? line.descriptionEs : line.descriptionEn}
                         </td>
                         <td className="py-2 text-right">
@@ -870,228 +903,219 @@ export const AccountingScreen: React.FC = () => {
                   })}
                 </tbody>
               </table>
-              <div className="flex justify-end pt-2 border-t border-slate-200 dark:border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setInspectEntry(null)}
-                  className="h-9 px-4 rounded bg-emerald-600 text-xs font-semibold text-white"
-                >
-                  {t.common.close}
-                </button>
-              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </ErpModal>
 
-      {/* New GL Account Modal */}
-      {accModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60">
-          <div className="w-full max-w-md rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xl">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-800">
-              <h2 className="font-display text-base font-bold">
-                {locale === 'es' ? 'Nueva cuenta contable' : 'New GL account'}
-              </h2>
-              <button type="button" onClick={() => setAccModalOpen(false)} className="p-1">
-                <X className="w-4 h-4" />
-              </button>
+      <ErpModal
+        open={accModalOpen}
+        onClose={() => setAccModalOpen(false)}
+        title={locale === 'es' ? 'Nueva cuenta contable' : 'New GL account'}
+        maxWidthClass="max-w-md"
+        closeLabel={t.common.close}
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={() => setAccModalOpen(false)}
+              disabled={isSubmitting}
+              className="nr-focus-ring nr-transition h-9 px-3.5 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface)] text-xs font-semibold text-[var(--nr-text)] hover:bg-[var(--nr-surface-muted)]"
+            >
+              {t.common.cancel}
+            </button>
+            <button
+              type="submit"
+              form="nr-gl-account-form"
+              disabled={isSubmitting}
+              className="nr-focus-ring nr-transition h-9 px-4 rounded-lg bg-[var(--nr-primary)] hover:bg-[var(--nr-primary-hover)] text-xs font-semibold text-[var(--nr-primary-fg)] disabled:opacity-50"
+            >
+              {t.common.save}
+            </button>
+          </>
+        }
+      >
+        <form id="nr-gl-account-form" onSubmit={saveAccount} className="space-y-3">
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-[var(--nr-text)] mb-1">
+                {t.common.code}
+              </label>
+              <input
+                required
+                value={accCode}
+                onChange={(e) => setAccCode(e.target.value)}
+                placeholder="6201"
+                className="nr-focus-ring nr-transition w-full h-9 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-2.5 text-sm font-mono-num text-[var(--nr-text)]"
+              />
             </div>
-            <form onSubmit={saveAccount} className="p-4 space-y-3">
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold mb-1">{t.common.code}</label>
-                  <input
-                    required
-                    value={accCode}
-                    onChange={(e) => setAccCode(e.target.value)}
-                    placeholder="6201"
-                    className="w-full h-9 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 text-sm font-mono-num"
-                  />
-                </div>
-                <div className="col-span-2">
-                  <label className="block text-xs font-semibold mb-1">
-                    {locale === 'es' ? 'Tipo' : 'Type'}
-                  </label>
-                  <select
-                    value={accType}
-                    onChange={(e) => setAccType(e.target.value as AccountType)}
-                    className="w-full h-9 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 text-xs font-semibold"
-                  >
-                    <option value="ASSET">ASSET</option>
-                    <option value="LIABILITY">LIABILITY</option>
-                    <option value="EQUITY">EQUITY</option>
-                    <option value="REVENUE">REVENUE</option>
-                    <option value="COST">COST</option>
-                    <option value="EXPENSE">EXPENSE</option>
-                  </select>
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold mb-1">
-                  {locale === 'es' ? 'Nombre de la cuenta' : 'Account name'}
-                </label>
-                <input
-                  required
-                  value={accName}
-                  onChange={(e) => setAccName(e.target.value)}
-                  className="w-full h-9 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 text-sm"
-                />
-              </div>
-              <div className="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setAccModalOpen(false)}
-                  className="h-9 px-3.5 rounded border border-slate-300 dark:border-slate-700 text-xs font-semibold"
-                >
-                  {t.common.cancel}
-                </button>
-                <button
-                  type="submit"
-                  className="h-9 px-4 rounded bg-emerald-600 text-xs font-semibold text-white"
-                >
-                  {t.common.save}
-                </button>
-              </div>
-            </form>
+            <div className="col-span-2">
+              <label className="block text-xs font-semibold text-[var(--nr-text)] mb-1">
+                {locale === 'es' ? 'Tipo' : 'Type'}
+              </label>
+              <select
+                value={accType}
+                onChange={(e) => setAccType(e.target.value as AccountType)}
+                className="nr-focus-ring nr-transition w-full h-9 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-2 text-xs font-semibold text-[var(--nr-text)]"
+              >
+                <option value="ASSET">ASSET</option>
+                <option value="LIABILITY">LIABILITY</option>
+                <option value="EQUITY">EQUITY</option>
+                <option value="REVENUE">REVENUE</option>
+                <option value="COST">COST</option>
+                <option value="EXPENSE">EXPENSE</option>
+              </select>
+            </div>
           </div>
-        </div>
-      )}
+          <div>
+            <label className="block text-xs font-semibold text-[var(--nr-text)] mb-1">
+              {locale === 'es' ? 'Nombre de la cuenta' : 'Account name'}
+            </label>
+            <input
+              required
+              value={accName}
+              onChange={(e) => setAccName(e.target.value)}
+              className="nr-focus-ring nr-transition w-full h-9 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-2.5 text-sm text-[var(--nr-text)]"
+            />
+          </div>
+        </form>
+      </ErpModal>
 
-      {/* New Journal Entry Modal */}
-      {jeModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60">
-          <div className="w-full max-w-md rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xl">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-800">
-              <h2 className="font-display text-base font-bold">
-                {locale === 'es' ? 'Nuevo asiento contable (Solo demo)' : 'New journal entry'}
-              </h2>
-              <button type="button" onClick={() => setJeModalOpen(false)} className="p-1">
-                <X className="w-4 h-4" />
-              </button>
+      <ErpModal
+        open={jeModalOpen}
+        onClose={() => setJeModalOpen(false)}
+        title={locale === 'es' ? 'Nuevo asiento contable (Solo demo)' : 'New journal entry'}
+        maxWidthClass="max-w-md"
+        closeLabel={t.common.close}
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={() => setJeModalOpen(false)}
+              disabled={isSubmitting}
+              className="nr-focus-ring nr-transition h-9 px-3.5 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface)] text-xs font-semibold text-[var(--nr-text)] hover:bg-[var(--nr-surface-muted)]"
+            >
+              {t.common.cancel}
+            </button>
+            <button
+              type="submit"
+              form="nr-journal-entry-form"
+              disabled={isSubmitting}
+              className="nr-focus-ring nr-transition h-9 px-4 rounded-lg bg-[var(--nr-primary)] hover:bg-[var(--nr-primary-hover)] text-xs font-semibold text-[var(--nr-primary-fg)] disabled:opacity-50"
+            >
+              {t.common.save}
+            </button>
+          </>
+        }
+      >
+        <form id="nr-journal-entry-form" onSubmit={saveJournalEntry} className="space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-[var(--nr-text)] mb-1">
+                {t.common.date}
+              </label>
+              <input
+                type="date"
+                required
+                value={jeDate}
+                onChange={(e) => setJeDate(e.target.value)}
+                className="nr-focus-ring nr-transition w-full h-9 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-2.5 text-sm font-mono-num text-[var(--nr-text)]"
+              />
             </div>
-            <form onSubmit={saveJournalEntry} className="p-4 space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold mb-1">{t.common.date}</label>
-                  <input
-                    type="date"
-                    required
-                    value={jeDate}
-                    onChange={(e) => setJeDate(e.target.value)}
-                    className="w-full h-9 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 text-sm font-mono-num"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold mb-1">
-                    {locale === 'es' ? 'Período' : 'Period'}
-                  </label>
-                  <select
-                    value={jePeriodId}
-                    onChange={(e) => setJePeriodId(e.target.value)}
-                    className="w-full h-9 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 text-xs"
-                  >
-                    {erpState.accountingPeriods.map((ap) => (
-                      <option key={ap.id} value={ap.id}>
-                        {locale === 'es' ? ap.nameEs : ap.nameEn}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold mb-1">
-                  {locale === 'es' ? 'Cuenta Débito' : 'Debit Account'}
-                </label>
-                <select
-                  value={jeDebitAcc}
-                  onChange={(e) => setJeDebitAcc(e.target.value)}
-                  className="w-full h-9 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 text-xs"
-                >
-                  {erpState.glAccounts.map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.code} · {locale === 'es' ? a.nameEs : a.nameEn}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold mb-1">
-                  {locale === 'es' ? 'Cuenta Crédito' : 'Credit Account'}
-                </label>
-                <select
-                  value={jeCreditAcc}
-                  onChange={(e) => setJeCreditAcc(e.target.value)}
-                  className="w-full h-9 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 text-xs"
-                >
-                  {erpState.glAccounts.map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.code} · {locale === 'es' ? a.nameEs : a.nameEn}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold mb-1">
-                    {locale === 'es' ? 'Importe RD$' : 'Amount RD$'}
-                  </label>
-                  <input
-                    type="number"
-                    min="0.01"
-                    step="0.01"
-                    required
-                    value={jeAmount}
-                    onChange={(e) => setJeAmount(e.target.value)}
-                    className="w-full h-9 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 text-sm font-mono-num"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold mb-1">
-                    {locale === 'es' ? 'Referencia' : 'Reference'}
-                  </label>
-                  <input
-                    value={jeReference}
-                    onChange={(e) => setJeReference(e.target.value)}
-                    placeholder="MAN-001"
-                    className="w-full h-9 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 text-sm font-mono-num"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold mb-1">
-                  {locale === 'es' ? 'Concepto' : 'Memo'}
-                </label>
-                <input
-                  required
-                  value={jeMemo}
-                  onChange={(e) => setJeMemo(e.target.value)}
-                  placeholder={
-                    locale === 'es'
-                      ? 'Ej. Traslado de caja a banco'
-                      : 'e.g. Cash deposit to bank'
-                  }
-                  className="w-full h-9 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 text-sm"
-                />
-              </div>
-              <div className="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setJeModalOpen(false)}
-                  className="h-9 px-3.5 rounded border border-slate-300 dark:border-slate-700 text-xs font-semibold"
-                >
-                  {t.common.cancel}
-                </button>
-                <button
-                  type="submit"
-                  className="h-9 px-4 rounded bg-emerald-600 text-xs font-semibold text-white"
-                >
-                  {t.common.save}
-                </button>
-              </div>
-            </form>
+            <div>
+              <label className="block text-xs font-semibold text-[var(--nr-text)] mb-1">
+                {locale === 'es' ? 'Período' : 'Period'}
+              </label>
+              <select
+                value={jePeriodId}
+                onChange={(e) => setJePeriodId(e.target.value)}
+                className="nr-focus-ring nr-transition w-full h-9 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-2 text-xs text-[var(--nr-text)]"
+              >
+                {erpState.accountingPeriods.map((ap) => (
+                  <option key={ap.id} value={ap.id}>
+                    {locale === 'es' ? ap.nameEs : ap.nameEn}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
-        </div>
-      )}
+          <div>
+            <label className="block text-xs font-semibold text-[var(--nr-text)] mb-1">
+              {locale === 'es' ? 'Cuenta Débito' : 'Debit Account'}
+            </label>
+            <select
+              value={jeDebitAcc}
+              onChange={(e) => setJeDebitAcc(e.target.value)}
+              className="nr-focus-ring nr-transition w-full h-9 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-2 text-xs text-[var(--nr-text)]"
+            >
+              {erpState.glAccounts.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.code} · {locale === 'es' ? a.nameEs : a.nameEn}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-[var(--nr-text)] mb-1">
+              {locale === 'es' ? 'Cuenta Crédito' : 'Credit Account'}
+            </label>
+            <select
+              value={jeCreditAcc}
+              onChange={(e) => setJeCreditAcc(e.target.value)}
+              className="nr-focus-ring nr-transition w-full h-9 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-2 text-xs text-[var(--nr-text)]"
+            >
+              {erpState.glAccounts.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.code} · {locale === 'es' ? a.nameEs : a.nameEn}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-[var(--nr-text)] mb-1">
+                {locale === 'es' ? 'Importe RD$' : 'Amount RD$'}
+              </label>
+              <input
+                type="number"
+                min="0.01"
+                step="0.01"
+                required
+                value={jeAmount}
+                onChange={(e) => setJeAmount(e.target.value)}
+                className="nr-focus-ring nr-transition w-full h-9 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-2.5 text-sm font-mono-num text-[var(--nr-text)]"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-[var(--nr-text)] mb-1">
+                {locale === 'es' ? 'Referencia' : 'Reference'}
+              </label>
+              <input
+                value={jeReference}
+                onChange={(e) => setJeReference(e.target.value)}
+                placeholder="MAN-001"
+                className="nr-focus-ring nr-transition w-full h-9 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-2.5 text-sm font-mono-num text-[var(--nr-text)]"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-[var(--nr-text)] mb-1">
+              {locale === 'es' ? 'Concepto' : 'Memo'}
+            </label>
+            <input
+              required
+              value={jeMemo}
+              onChange={(e) => setJeMemo(e.target.value)}
+              placeholder={
+                locale === 'es'
+                  ? 'Ej. Traslado de caja a banco'
+                  : 'e.g. Cash deposit to bank'
+              }
+              className="nr-focus-ring nr-transition w-full h-9 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-2.5 text-sm text-[var(--nr-text)]"
+            />
+          </div>
+        </form>
+      </ErpModal>
     </div>
   );
 };

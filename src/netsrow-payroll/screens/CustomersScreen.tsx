@@ -1,6 +1,13 @@
 import React, { useMemo, useState } from 'react';
-import { Edit3, Plus, Search, X } from 'lucide-react';
+import { Edit3, Plus } from 'lucide-react';
 import { DataTable, DataTableColumn } from '../components/DataTable';
+import {
+  ErpFilterBar,
+  ErpModal,
+  ErpPageHeader,
+  ErpStatePanel,
+  ErpSurfaceCard,
+} from '../components/ErpUiPrimitives';
 import { MoneyCell } from '../components/MoneyCell';
 import { StatusBadge } from '../components/StatusBadge';
 import { usePayrollWorkspace } from '../context/PayrollWorkspaceContext';
@@ -17,6 +24,7 @@ export const CustomersScreen: React.FC = () => {
   );
 
   const [modalOpen, setModalOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [editing, setEditing] = useState<Customer | null>(null);
   const [cCode, setCCode] = useState('');
   const [cName, setCName] = useState('');
@@ -79,22 +87,29 @@ export const CustomersScreen: React.FC = () => {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!cCode.trim() || !cName.trim()) return;
-    const saved: Customer = {
-      id: editing?.id ?? `cus-${Date.now()}`,
-      code: cCode.trim(),
-      name: cName.trim(),
-      taxId: cTaxId.trim() || '000-0000000-0',
-      email: cEmail.trim(),
-      phone: cPhone.trim(),
-      type: cType,
-      creditLimit: Number(cCreditLimit) || 0,
-      currentBalance: editing?.currentBalance ?? 0,
-      active: editing?.active ?? true,
-    };
-    await upsertCustomer(saved);
-    setSelectedId(saved.id);
-    setModalOpen(false);
+    setIsSaving(true);
+    try {
+      const saved: Customer = {
+        id: editing?.id ?? `cus-${Date.now()}`,
+        code: cCode.trim(),
+        name: cName.trim(),
+        taxId: cTaxId.trim() || '000-0000000-0',
+        email: cEmail.trim(),
+        phone: cPhone.trim(),
+        type: cType,
+        creditLimit: Number(cCreditLimit) || 0,
+        currentBalance: editing?.currentBalance ?? 0,
+        active: editing?.active ?? true,
+      };
+      await upsertCustomer(saved);
+      setSelectedId(saved.id);
+      setModalOpen(false);
+    } finally {
+      setIsSaving(false);
+    }
   };
+
+  const activeFilterCount = (query.trim() ? 1 : 0) + (typeFilter !== 'ALL' ? 1 : 0);
 
   const columns: DataTableColumn<Customer>[] = [
     {
@@ -102,7 +117,7 @@ export const CustomersScreen: React.FC = () => {
       header: t.common.code,
       stickyLeft: true,
       render: (c) => (
-        <span className="font-mono-num text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+        <span className="font-mono-num text-xs font-semibold text-[var(--nr-primary)]">
           {c.code}
         </span>
       ),
@@ -113,8 +128,8 @@ export const CustomersScreen: React.FC = () => {
       minWidthClass: 'min-w-[200px]',
       render: (c) => (
         <div>
-          <div className="font-semibold text-slate-900 dark:text-slate-100">{c.name}</div>
-          <div className="font-mono-num text-[11px] text-slate-500 dark:text-slate-400">
+          <div className="font-semibold text-[var(--nr-text)]">{c.name}</div>
+          <div className="font-mono-num text-[11px] text-[var(--nr-text-secondary)]">
             RNC/Cédula: {c.taxId}
           </div>
         </div>
@@ -130,9 +145,7 @@ export const CustomersScreen: React.FC = () => {
               ? locale === 'es'
                 ? 'Corporativo'
                 : 'Corporate'
-              : locale === 'es'
-                ? 'Individual'
-                : 'Individual'
+              : 'Individual'
           }
           tone={c.type === 'CORPORATE' ? 'navy' : 'neutral'}
         />
@@ -167,7 +180,7 @@ export const CustomersScreen: React.FC = () => {
             e.stopPropagation();
             openEdit(c);
           }}
-          className="inline-flex items-center gap-1 rounded border border-slate-200 dark:border-slate-700 px-2.5 py-1 text-xs font-medium hover:bg-slate-50 dark:hover:bg-slate-800"
+          className="nr-focus-ring nr-transition inline-flex items-center gap-1 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] hover:border-[var(--nr-primary)] px-2.5 py-1 text-xs font-medium text-[var(--nr-text)]"
         >
           <Edit3 className="w-3 h-3" />
           <span>{t.common.edit}</span>
@@ -178,57 +191,57 @@ export const CustomersScreen: React.FC = () => {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="font-display text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100">
-              {t.navigation.customers}
-            </h1>
-            <StatusBadge label={t.topBar.demoOnlyTag} tone="amber" />
-          </div>
-          <p className="mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-            {locale === 'es'
-              ? 'Directorio de clientes, límites de crédito y saldo pendiente por cobrar.'
-              : 'Customer directory, credit limits, and open accounts receivable balances.'}
-          </p>
-        </div>
+      <ErpPageHeader
+        title={t.navigation.customers}
+        subtitle={
+          locale === 'es'
+            ? 'Directorio de clientes, límites de crédito y saldo pendiente por cobrar.'
+            : 'Customer directory, credit limits, and open accounts receivable balances.'
+        }
+        badge={<StatusBadge label={t.topBar.demoOnlyTag} tone="amber" />}
+        actions={
+          <button
+            type="button"
+            onClick={openNew}
+            className="nr-focus-ring nr-transition inline-flex items-center gap-1.5 h-10 px-4 rounded-lg bg-[var(--nr-primary)] hover:bg-[var(--nr-primary-hover)] text-xs font-semibold text-[var(--nr-primary-fg)] whitespace-nowrap shrink-0"
+          >
+            <Plus className="w-4 h-4" />
+            <span>{locale === 'es' ? 'Nuevo cliente' : 'New customer'}</span>
+          </button>
+        }
+      />
 
-        <button
-          type="button"
-          onClick={openNew}
-          className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded bg-emerald-600 hover:bg-emerald-700 text-xs font-semibold text-white whitespace-nowrap shrink-0"
-        >
-          <Plus className="w-4 h-4" />
-          <span>{locale === 'es' ? 'Nuevo cliente' : 'New customer'}</span>
-        </button>
-      </div>
-
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="relative flex-1 max-w-md">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-          <input
-            type="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder={
-              locale === 'es'
-                ? 'Buscar por código, nombre o RNC/Cédula…'
-                : 'Search by code, name, or tax ID…'
-            }
-            className="w-full h-9 pl-9 pr-3 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:border-emerald-500"
-          />
-        </div>
-
-        <div className="inline-flex items-center gap-1 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 p-1">
+      <ErpFilterBar
+        searchValue={query}
+        onSearchChange={setQuery}
+        searchPlaceholder={
+          locale === 'es'
+            ? 'Buscar por código, nombre o RNC/Cédula…'
+            : 'Search by code, name, or tax ID…'
+        }
+        hasActiveFilters={activeFilterCount > 0}
+        activeFilterCount={activeFilterCount}
+        activeFilterLabel={
+          locale === 'es'
+            ? `${activeFilterCount} filtro${activeFilterCount > 1 ? 's' : ''}`
+            : `${activeFilterCount} active`
+        }
+        clearLabel={locale === 'es' ? 'Limpiar' : 'Clear'}
+        onClearFilters={() => {
+          setQuery('');
+          setTypeFilter('ALL');
+        }}
+      >
+        <div className="inline-flex items-center gap-1 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-muted)] p-1">
           {(['ALL', 'CORPORATE', 'INDIVIDUAL'] as const).map((tp) => (
             <button
               key={tp}
               type="button"
               onClick={() => setTypeFilter(tp)}
-              className={`px-3 py-1.5 rounded text-xs font-semibold transition-colors whitespace-nowrap ${
+              className={`nr-focus-ring nr-transition px-3 py-1.5 rounded-md text-xs font-semibold whitespace-nowrap ${
                 typeFilter === tp
-                  ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs'
-                  : 'text-slate-600 dark:text-slate-400'
+                  ? 'bg-[var(--nr-surface)] text-[var(--nr-text)] shadow-xs'
+                  : 'text-[var(--nr-text-secondary)] hover:text-[var(--nr-text)]'
               }`}
             >
               {tp === 'ALL'
@@ -243,53 +256,80 @@ export const CustomersScreen: React.FC = () => {
             </button>
           ))}
         </div>
-      </div>
+      </ErpFilterBar>
 
-      <DataTable
-        columns={columns}
-        rows={filtered}
-        getRowKey={(c) => c.id}
-        selectedRowKey={selectedId}
-        onRowClick={(c) => setSelectedId(c.id)}
-        emptyMessage={t.common.noResults}
-      />
+      {filtered.length === 0 ? (
+        <ErpStatePanel
+          variant="empty"
+          title={t.common.noResults}
+          description={
+            locale === 'es'
+              ? 'No hay clientes que coincidan con tu búsqueda.'
+              : 'No customers match your current filter.'
+          }
+          actionLabel={activeFilterCount > 0 ? (locale === 'es' ? 'Limpiar filtros' : 'Clear filters') : undefined}
+          onAction={
+            activeFilterCount > 0
+              ? () => {
+                  setQuery('');
+                  setTypeFilter('ALL');
+                }
+              : undefined
+          }
+        />
+      ) : (
+        <DataTable
+          columns={columns}
+          rows={filtered}
+          getRowKey={(c) => c.id}
+          selectedRowKey={selectedId}
+          onRowClick={(c) => setSelectedId(c.id)}
+          emptyMessage={t.common.noResults}
+        />
+      )}
 
       {selectedCustomer && (
-        <section className="rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4 space-y-3">
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-2.5">
+        <ErpSurfaceCard padding="md" className="space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--nr-border)] pb-3">
             <div>
-              <h2 className="font-display text-sm sm:text-base font-bold">
-                {selectedCustomer.name} · {selectedCustomer.code}
+              <h2 className="font-display text-sm sm:text-base font-bold text-[var(--nr-text)]">
+                {selectedCustomer.name} ·{' '}
+                <span className="font-mono-num text-[var(--nr-primary)]">
+                  {selectedCustomer.code}
+                </span>
               </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <p className="text-xs text-[var(--nr-text-secondary)]">
                 {selectedCustomer.email || '—'} · {selectedCustomer.phone || '—'}
               </p>
             </div>
             <div className="text-right">
-              <div className="text-[11px] text-slate-500 dark:text-slate-400">
+              <div className="text-[11px] font-semibold uppercase tracking-wider text-[var(--nr-text-secondary)]">
                 {locale === 'es' ? 'Saldo actual' : 'Current balance'}
               </div>
               <MoneyCell amount={selectedCustomer.currentBalance} locale={locale} emphasize />
             </div>
           </div>
 
-          <div className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+          <div className="text-xs font-semibold text-[var(--nr-text)]">
             {locale === 'es' ? 'Historial de ventas al cliente' : 'Customer sales history'} (
-            {customerSales.length})
+            <span className="font-mono-num">{customerSales.length}</span>)
           </div>
           {customerSales.length === 0 ? (
-            <p className="text-xs text-slate-500 dark:text-slate-400">
+            <p className="text-xs text-[var(--nr-text-secondary)]">
               {locale === 'es'
                 ? 'Sin ventas registradas para este cliente.'
                 : 'No recorded sales for this customer.'}
             </p>
           ) : (
-            <div className="divide-y divide-slate-100 dark:divide-slate-800">
+            <div className="divide-y divide-[var(--nr-border)]">
               {customerSales.map((s) => (
-                <div key={s.id} className="flex items-center justify-between py-2 text-xs">
+                <div key={s.id} className="flex items-center justify-between py-2.5 text-xs">
                   <div>
-                    <span className="font-mono-num font-semibold">{s.number}</span> ·{' '}
-                    <span className="text-slate-500">{s.date}</span>
+                    <span className="font-mono-num font-semibold text-[var(--nr-text)]">
+                      {s.number}
+                    </span>{' '}
+                    ·{' '}
+                    <span className="font-mono-num text-[var(--nr-text-secondary)]">{s.date}</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <MoneyCell amount={s.total} locale={locale} />
@@ -299,7 +339,7 @@ export const CustomersScreen: React.FC = () => {
                         setSelectedSaleId(s.id);
                         setActiveScreen('sales_ar');
                       }}
-                      className="text-emerald-700 dark:text-emerald-400 font-semibold hover:underline"
+                      className="nr-focus-ring rounded text-[var(--nr-primary)] font-semibold hover:underline"
                     >
                       {t.common.viewDetails}
                     </button>
@@ -308,126 +348,130 @@ export const CustomersScreen: React.FC = () => {
               ))}
             </div>
           )}
-        </section>
+        </ErpSurfaceCard>
       )}
 
-      {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60">
-          <div className="w-full max-w-md rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xl">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-800">
-              <h2 className="font-display text-base font-bold">
-                {editing
-                  ? locale === 'es'
-                    ? 'Editar cliente'
-                    : 'Edit customer'
-                  : locale === 'es'
-                    ? 'Nuevo cliente'
-                    : 'New customer'}
-              </h2>
-              <button type="button" onClick={() => setModalOpen(false)} className="p-1">
-                <X className="w-4 h-4" />
-              </button>
+      <ErpModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title={
+          editing
+            ? locale === 'es'
+              ? 'Editar cliente'
+              : 'Edit customer'
+            : locale === 'es'
+              ? 'Nuevo cliente'
+              : 'New customer'
+        }
+        maxWidthClass="max-w-md"
+        closeLabel={t.common.cancel}
+      >
+        <form onSubmit={handleSave} className="space-y-3">
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-[var(--nr-text)] mb-1">
+                {t.common.code}
+              </label>
+              <input
+                value={cCode}
+                onChange={(e) => setCCode(e.target.value)}
+                required
+                className="nr-focus-ring w-full h-9 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-2.5 text-sm font-mono-num text-[var(--nr-text)]"
+              />
             </div>
-            <form onSubmit={handleSave} className="p-4 space-y-3">
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold mb-1">{t.common.code}</label>
-                  <input
-                    value={cCode}
-                    onChange={(e) => setCCode(e.target.value)}
-                    required
-                    className="w-full h-9 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 text-sm font-mono-num"
-                  />
-                </div>
-                <div className="col-span-2">
-                  <label className="block text-xs font-semibold mb-1">
-                    {locale === 'es' ? 'Razón social / Nombre' : 'Name'}
-                  </label>
-                  <input
-                    value={cName}
-                    onChange={(e) => setCName(e.target.value)}
-                    required
-                    className="w-full h-9 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 text-sm"
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold mb-1">RNC / Cédula</label>
-                  <input
-                    value={cTaxId}
-                    onChange={(e) => setCTaxId(e.target.value)}
-                    className="w-full h-9 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 text-sm font-mono-num"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold mb-1">
-                    {locale === 'es' ? 'Tipo' : 'Type'}
-                  </label>
-                  <select
-                    value={cType}
-                    onChange={(e) => setCType(e.target.value as 'INDIVIDUAL' | 'CORPORATE')}
-                    className="w-full h-9 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 text-xs"
-                  >
-                    <option value="CORPORATE">
-                      {locale === 'es' ? 'Corporativo' : 'Corporate'}
-                    </option>
-                    <option value="INDIVIDUAL">Individual</option>
-                  </select>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold mb-1">Email</label>
-                  <input
-                    type="email"
-                    value={cEmail}
-                    onChange={(e) => setCEmail(e.target.value)}
-                    className="w-full h-9 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold mb-1">
-                    {locale === 'es' ? 'Teléfono' : 'Phone'}
-                  </label>
-                  <input
-                    value={cPhone}
-                    onChange={(e) => setCPhone(e.target.value)}
-                    className="w-full h-9 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 text-sm"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold mb-1">
-                  {locale === 'es' ? 'Límite de crédito RD$' : 'Credit limit RD$'}
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  value={cCreditLimit}
-                  onChange={(e) => setCCreditLimit(e.target.value)}
-                  className="w-full h-9 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 text-sm font-mono-num"
-                />
-              </div>
-              <div className="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setModalOpen(false)}
-                  className="h-9 px-3.5 rounded border border-slate-300 dark:border-slate-700 text-xs font-semibold"
-                >
-                  {t.common.cancel}
-                </button>
-                <button
-                  type="submit"
-                  className="h-9 px-4 rounded bg-emerald-600 hover:bg-emerald-700 text-xs font-semibold text-white"
-                >
-                  {t.common.save}
-                </button>
-              </div>
-            </form>
+            <div className="col-span-2">
+              <label className="block text-xs font-semibold text-[var(--nr-text)] mb-1">
+                {locale === 'es' ? 'Razón social / Nombre' : 'Name'}
+              </label>
+              <input
+                value={cName}
+                onChange={(e) => setCName(e.target.value)}
+                required
+                className="nr-focus-ring w-full h-9 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-2.5 text-sm text-[var(--nr-text)]"
+              />
+            </div>
           </div>
-        </div>
-      )}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-[var(--nr-text)] mb-1">
+                RNC / Cédula
+              </label>
+              <input
+                value={cTaxId}
+                onChange={(e) => setCTaxId(e.target.value)}
+                className="nr-focus-ring w-full h-9 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-2.5 text-sm font-mono-num text-[var(--nr-text)]"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-[var(--nr-text)] mb-1">
+                {locale === 'es' ? 'Tipo' : 'Type'}
+              </label>
+              <select
+                value={cType}
+                onChange={(e) => setCType(e.target.value as 'INDIVIDUAL' | 'CORPORATE')}
+                className="nr-focus-ring w-full h-9 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-2 text-xs text-[var(--nr-text)]"
+              >
+                <option value="CORPORATE">
+                  {locale === 'es' ? 'Corporativo' : 'Corporate'}
+                </option>
+                <option value="INDIVIDUAL">Individual</option>
+              </select>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-[var(--nr-text)] mb-1">
+                Email
+              </label>
+              <input
+                type="email"
+                value={cEmail}
+                onChange={(e) => setCEmail(e.target.value)}
+                className="nr-focus-ring w-full h-9 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-2.5 text-sm text-[var(--nr-text)]"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-[var(--nr-text)] mb-1">
+                {locale === 'es' ? 'Teléfono' : 'Phone'}
+              </label>
+              <input
+                value={cPhone}
+                onChange={(e) => setCPhone(e.target.value)}
+                className="nr-focus-ring w-full h-9 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-2.5 text-sm text-[var(--nr-text)]"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-[var(--nr-text)] mb-1">
+              {locale === 'es' ? 'Límite de crédito RD$' : 'Credit limit RD$'}
+            </label>
+            <input
+              type="number"
+              min="0"
+              value={cCreditLimit}
+              onChange={(e) => setCCreditLimit(e.target.value)}
+              className="nr-focus-ring w-full h-9 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-2.5 text-sm font-mono-num text-[var(--nr-text)]"
+            />
+          </div>
+          <div className="flex justify-end gap-2 pt-3 border-t border-[var(--nr-border)]">
+            <button
+              type="button"
+              onClick={() => setModalOpen(false)}
+              className="nr-focus-ring nr-transition h-9 px-3.5 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface)] text-xs font-semibold text-[var(--nr-text)] hover:bg-[var(--nr-surface-muted)]"
+            >
+              {t.common.cancel}
+            </button>
+            <button
+              type="submit"
+              disabled={isSaving}
+              className="nr-focus-ring nr-transition h-9 px-4 rounded-lg bg-[var(--nr-primary)] hover:bg-[var(--nr-primary-hover)] text-xs font-semibold text-[var(--nr-primary-fg)] disabled:opacity-50"
+            >
+              {t.common.save}
+            </button>
+          </div>
+        </form>
+      </ErpModal>
     </div>
   );
 };
+

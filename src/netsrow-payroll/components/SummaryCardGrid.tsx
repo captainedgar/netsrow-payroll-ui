@@ -35,16 +35,16 @@ export const SummaryCardGrid: React.FC<SummaryCardGridProps> = ({
       {items.map((item) => (
         <div
           key={item.id}
-          className={`rounded-md border p-4 transition-colors ${
+          className={`nr-transition rounded-xl border p-4 ${
             item.emphasize
-              ? 'bg-emerald-50/70 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-800/70'
-              : 'bg-white border-slate-200 dark:bg-slate-900 dark:border-slate-700'
+              ? 'bg-[var(--nr-success-bg)] border-[var(--nr-success-border)]'
+              : 'bg-[var(--nr-surface)] border-[var(--nr-border)]'
           }`}
         >
-          <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
+          <div className="text-xs font-medium text-[var(--nr-text-secondary)]">
             {item.label}
           </div>
-          <div className="mt-2">
+          <div className="mt-2 min-w-0">
             {item.isCurrency ? (
               <MoneyCell
                 amount={item.amount}
@@ -54,13 +54,16 @@ export const SummaryCardGrid: React.FC<SummaryCardGridProps> = ({
                 emphasize={item.emphasize}
               />
             ) : (
-              <span className="font-mono-num text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100">
+              <span
+                data-tabular="true"
+                className="font-mono-num text-lg sm:text-xl font-bold text-[var(--nr-text)]"
+              >
                 {item.valueText ?? '—'}
               </span>
             )}
           </div>
           {item.helperText && (
-            <div className="mt-1.5 text-[11px] text-slate-500 dark:text-slate-400">
+            <div className="mt-1.5 text-[11px] text-[var(--nr-text-secondary)]">
               {item.helperText}
             </div>
           )}

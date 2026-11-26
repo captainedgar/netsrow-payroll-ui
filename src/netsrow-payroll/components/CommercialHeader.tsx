@@ -124,7 +124,7 @@ export const CommercialHeader: React.FC = () => {
             type="button"
             onClick={toggleTheme}
             aria-label={theme === 'light' ? 'Oscuro' : 'Claro'}
-            className="inline-flex items-center justify-center w-9 h-9 rounded-full border border-[var(--nr-border)] bg-[var(--nr-surface)] text-[var(--nr-text)] hover:bg-[var(--nr-surface-muted)] shrink-0 nr-focus-ring nr-transition"
+            className="inline-flex items-center justify-center w-9 h-9 rounded-full border border-[var(--nr-border)] bg-[var(--nr-surface)] text-[var(--nr-text)] hover:bg-[var(--nr-surface-muted)] active:scale-95 shrink-0 nr-focus-ring nr-transition"
           >
             {theme === 'light' ? (
               <Moon className="w-4 h-4" />
@@ -136,7 +136,7 @@ export const CommercialHeader: React.FC = () => {
           <button
             type="button"
             onClick={() => handleLink(erpTarget)}
-            className="hidden sm:inline-flex items-center h-10 px-4 rounded-xl border border-[var(--nr-border)] bg-[var(--nr-surface)] hover:bg-[var(--nr-surface-muted)] text-sm font-semibold text-[var(--nr-text)] whitespace-nowrap shrink-0 nr-focus-ring nr-transition"
+            className="hidden sm:inline-flex items-center h-10 px-4 rounded-xl border border-[var(--nr-border)] bg-[var(--nr-surface)] hover:bg-[var(--nr-surface-muted)] active:scale-[0.98] text-sm font-semibold text-[var(--nr-text)] whitespace-nowrap shrink-0 nr-focus-ring nr-transition"
           >
             {ct.nav.erpAccess}
           </button>
@@ -147,7 +147,7 @@ export const CommercialHeader: React.FC = () => {
             onClick={() => setMobileMenuOpen((p) => !p)}
             aria-label={mobileMenuOpen ? ct.nav.closeMenu : ct.nav.openMenu}
             aria-expanded={mobileMenuOpen}
-            className="lg:hidden inline-flex items-center justify-center w-10 h-10 rounded-xl border border-[var(--nr-border)] bg-[var(--nr-surface)] text-[var(--nr-text)] hover:bg-[var(--nr-surface-muted)] shrink-0 nr-focus-ring nr-transition"
+            className="lg:hidden inline-flex items-center justify-center w-10 h-10 rounded-xl border border-[var(--nr-border)] bg-[var(--nr-surface)] text-[var(--nr-text)] hover:bg-[var(--nr-surface-muted)] active:scale-95 shrink-0 nr-focus-ring nr-transition"
           >
             {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
           </button>
@@ -156,7 +156,7 @@ export const CommercialHeader: React.FC = () => {
 
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="lg:hidden border-t border-[var(--nr-border)] bg-[var(--nr-surface)] px-4 py-4 space-y-1.5">
+        <div className="lg:hidden border-t border-[var(--nr-border)] bg-[var(--nr-surface)] px-4 py-4 space-y-1.5 nr-panel-enter">
           <button
             type="button"
             onClick={() => handleLink('/#funcionalidades')}

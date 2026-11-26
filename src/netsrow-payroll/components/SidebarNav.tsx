@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   BookOpen,
   Boxes,
@@ -11,6 +11,7 @@ import {
   ChevronRight,
   ChevronUp,
   ClipboardCheck,
+  FileCheck2,
   FileText,
   History,
   Home,
@@ -64,6 +65,7 @@ export const SidebarNav: React.FC = () => {
 
   const [collapsed, setCollapsed] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
+    e_invoicing: false,
     cashbox: false,
     inventory: false,
     catalog: false,
@@ -75,10 +77,40 @@ export const SidebarNav: React.FC = () => {
     setExpandedGroups((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
+  const closeMobileWithFocus = useCallback(() => {
+    setIsMobileNavOpen(false);
+    requestAnimationFrame(() => {
+      document.getElementById('nr-mobile-nav-trigger')?.focus();
+    });
+  }, [setIsMobileNavOpen]);
+
+  useEffect(() => {
+    if (!isMobileNavOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        closeMobileWithFocus();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isMobileNavOpen, closeMobileWithFocus]);
+
   const operationItems: NavGroupItem[] = [
     { id: 'overview', label: t.navigation.overview, icon: Home },
     { id: 'pos', label: t.navigation.pos, icon: MonitorSmartphone },
     { id: 'sales_ar', label: t.navigation.salesAr, icon: ReceiptText },
+    {
+      id: 'e_invoicing',
+      label: t.navigation.eInvoicing,
+      icon: FileCheck2,
+      subItems: [
+        { id: 'e_invoicing_docs', label: t.navigation.eInvoicingDocs },
+        { id: 'e_invoicing_issue', label: t.navigation.eInvoicingIssue },
+        { id: 'e_invoicing_lookup', label: t.navigation.eInvoicingLookup },
+        { id: 'e_invoicing_sequences', label: t.navigation.eInvoicingSequences },
+        { id: 'e_invoicing_config', label: t.navigation.eInvoicingConfig },
+      ],
+    },
     { id: 'customers', label: t.navigation.customers, icon: Users },
     {
       id: 'cashbox',
@@ -160,6 +192,12 @@ export const SidebarNav: React.FC = () => {
     if (id === 'payroll_review') {
       return activeScreen === 'payroll_review' && activeReviewTab !== 'history';
     }
+    if (id === 'e_invoicing') {
+      return (
+        activeScreen === 'e_invoicing' ||
+        activeScreen.startsWith('e_invoicing_')
+      );
+    }
     if (id === 'cashbox') {
       return (
         activeScreen === 'cashbox' ||
@@ -217,12 +255,12 @@ export const SidebarNav: React.FC = () => {
                   }
                 }}
                 title={compact ? item.label : undefined}
-                className={`flex-1 flex items-center justify-between gap-2 rounded px-3 py-2 text-[13px] font-medium transition-colors whitespace-nowrap ${
+                className={`nr-focus-ring nr-transition flex-1 flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-[13px] font-medium whitespace-nowrap ${
                   isActive && !hasSubs
-                    ? 'bg-emerald-600 text-white'
+                    ? 'bg-[#047857] text-white'
                     : isActive && hasSubs
-                      ? 'bg-slate-800/90 text-emerald-300'
-                      : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                      ? 'bg-[#132B42] text-emerald-300'
+                      : 'text-slate-300 hover:bg-[#132B42]/75 hover:text-white'
                 } ${compact ? 'justify-center px-2' : ''}`}
               >
                 <span className="flex items-center gap-2.5 min-w-0">
@@ -242,7 +280,7 @@ export const SidebarNav: React.FC = () => {
                 </span>
                 {!compact && hasSubs && (
                   <ChevronDown
-                    className={`w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform ${
+                    className={`w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform duration-150 ${
                       isExpanded ? 'rotate-180' : ''
                     }`}
                   />
@@ -251,7 +289,7 @@ export const SidebarNav: React.FC = () => {
             </div>
 
             {!compact && hasSubs && isExpanded && item.subItems && (
-              <ul className="mt-0.5 ml-4 pl-2.5 border-l border-slate-800 space-y-0.5">
+              <ul className="mt-0.5 ml-4 pl-2.5 border-l border-[#1A293D] space-y-0.5">
                 {item.subItems.map((sub) => {
                   const subActive = activeScreen === sub.id;
                   return (
@@ -259,10 +297,10 @@ export const SidebarNav: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => setActiveScreen(sub.id)}
-                        className={`w-full text-left rounded px-2.5 py-1.5 text-xs font-medium transition-colors truncate ${
+                        className={`nr-focus-ring nr-transition w-full text-left rounded-lg px-2.5 py-1.5 text-xs font-medium truncate ${
                           subActive
-                            ? 'bg-emerald-600 text-white'
-                            : 'text-slate-400 hover:bg-slate-800/70 hover:text-slate-100'
+                            ? 'bg-[#047857] text-white'
+                            : 'text-slate-400 hover:bg-[#132B42]/70 hover:text-slate-100'
                         }`}
                       >
                         {sub.label}
@@ -279,19 +317,19 @@ export const SidebarNav: React.FC = () => {
   );
 
   const sidebarContent = (compact: boolean, mobile = false) => (
-    <div className="flex h-full flex-col bg-[#0F172A] text-slate-100 border-r border-slate-800 select-none">
+    <div className="flex h-full flex-col bg-[#081321] text-slate-100 border-r border-[#1A293D] select-none">
       {/* Brand header */}
       <div
-        className={`flex items-center justify-between h-14 px-3.5 border-b border-slate-800 shrink-0 ${
+        className={`flex items-center justify-between h-14 px-3.5 border-b border-[#1A293D] shrink-0 ${
           compact ? 'justify-center' : ''
         }`}
       >
         <button
           type="button"
           onClick={() => setActiveScreen('overview')}
-          className="flex items-center gap-2.5 min-w-0 text-left"
+          className="nr-focus-ring flex items-center gap-2.5 min-w-0 text-left rounded-lg"
         >
-          <div className="w-8 h-8 rounded bg-emerald-600 flex items-center justify-center text-white shrink-0">
+          <div className="w-8 h-8 rounded-lg bg-[#047857] flex items-center justify-center text-white shrink-0">
             <Building2 className="w-4 h-4" />
           </div>
           {!compact && (
@@ -308,8 +346,8 @@ export const SidebarNav: React.FC = () => {
         {mobile && (
           <button
             type="button"
-            onClick={() => setIsMobileNavOpen(false)}
-            className="p-1.5 rounded text-slate-400 hover:text-white hover:bg-slate-800"
+            onClick={closeMobileWithFocus}
+            className="nr-focus-ring nr-transition p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-[#132B42]"
             aria-label={t.common.close}
           >
             <X className="w-4 h-4" />
@@ -319,11 +357,11 @@ export const SidebarNav: React.FC = () => {
 
       {/* Live Entity Card synced with Company Profile */}
       {!compact && (
-        <div className="px-3 py-2.5 border-b border-slate-800 shrink-0">
+        <div className="px-3 py-2.5 border-b border-[#1A293D] shrink-0">
           <button
             type="button"
             onClick={() => setActiveScreen('company')}
-            className="w-full flex items-center justify-between gap-2 rounded border border-slate-700/80 bg-slate-800/70 px-2.5 py-2 text-left hover:bg-slate-800 transition-colors"
+            className="nr-focus-ring nr-transition w-full flex items-center justify-between gap-2 rounded-lg border border-[#1E334A] bg-[#0E1E31] px-2.5 py-2 text-left hover:bg-[#132B42]"
           >
             <div className="min-w-0">
               <div className="text-xs font-semibold text-white truncate">
@@ -339,7 +377,10 @@ export const SidebarNav: React.FC = () => {
       )}
 
       {/* Full-height independently scrollable nav */}
-      <nav className="flex-1 min-h-0 overflow-y-auto px-2.5 py-3 space-y-5">
+      <nav
+        aria-label={t.navigation.operationSection}
+        className="flex-1 min-h-0 overflow-y-auto px-2.5 py-3 space-y-5"
+      >
         {/* OPERACIÓN */}
         <div>
           {!compact && (
@@ -432,10 +473,10 @@ export const SidebarNav: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => setActiveScreen(item.id)}
-                          className={`w-full flex items-center gap-2.5 rounded px-3 py-2 text-[13px] font-medium transition-colors whitespace-nowrap ${
+                          className={`nr-focus-ring nr-transition w-full flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium whitespace-nowrap ${
                             active
-                              ? 'bg-emerald-600 text-white'
-                              : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                              ? 'bg-[#047857] text-white'
+                              : 'text-slate-300 hover:bg-[#132B42]/75 hover:text-white'
                           }`}
                         >
                           <Icon
@@ -451,7 +492,7 @@ export const SidebarNav: React.FC = () => {
                 </ul>
 
                 <div className="pt-1.5">
-                  <div className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+                  <div className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
                     {t.navigation.payrollConfigSection}
                   </div>
                   <ul className="space-y-0.5">
@@ -463,10 +504,10 @@ export const SidebarNav: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => setActiveScreen(item.id)}
-                            className={`w-full flex items-center gap-2.5 rounded px-3 py-1.5 text-xs font-medium transition-colors whitespace-nowrap ${
+                            className={`nr-focus-ring nr-transition w-full flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-xs font-medium whitespace-nowrap ${
                               active
-                                ? 'bg-emerald-600 text-white'
-                                : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                                ? 'bg-[#047857] text-white'
+                                : 'text-slate-300 hover:bg-[#132B42]/75 hover:text-white'
                             }`}
                           >
                             <Icon
@@ -487,7 +528,7 @@ export const SidebarNav: React.FC = () => {
         </div>
 
         {/* CONFIGURACIÓN */}
-        <div className="pt-2 border-t border-slate-800/80 pb-3">
+        <div className="pt-2 border-t border-[#1A293D] pb-3">
           {!compact && (
             <div className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
               {t.navigation.settingsSection}
@@ -498,13 +539,16 @@ export const SidebarNav: React.FC = () => {
       </nav>
 
       {/* Bottom controls: Reset demo + Collapse */}
-      <div className="p-2.5 border-t border-slate-800 space-y-1.5 shrink-0">
+      <div className="p-2.5 border-t border-[#1A293D] space-y-1.5 shrink-0">
         <button
           type="button"
           disabled={isMutating}
-          onClick={() => resetDemoData()}
+          onClick={() => {
+            resetDemoData();
+            if (mobile) closeMobileWithFocus();
+          }}
           title={t.topBar.resetDemoData}
-          className={`w-full flex items-center justify-center gap-2 rounded border border-slate-700/80 bg-slate-800/60 px-2.5 py-2 text-xs font-medium text-amber-300 hover:bg-slate-800 hover:text-amber-200 disabled:opacity-50 transition-colors ${
+          className={`nr-focus-ring nr-transition w-full flex items-center justify-center gap-2 rounded-lg border border-[#1E334A] bg-[#0E1E31] px-2.5 py-2 text-xs font-medium text-amber-300 hover:bg-[#132B42] hover:text-amber-200 disabled:opacity-50 ${
             compact ? 'px-2' : ''
           }`}
         >
@@ -516,7 +560,7 @@ export const SidebarNav: React.FC = () => {
           <button
             type="button"
             onClick={() => setCollapsed((prev) => !prev)}
-            className="w-full flex items-center justify-center gap-2 rounded px-2.5 py-2 text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className="nr-focus-ring nr-transition w-full flex items-center justify-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium text-slate-400 hover:text-white hover:bg-[#132B42]"
             title={
               compact
                 ? t.navigation.expandSidebar
@@ -548,10 +592,15 @@ export const SidebarNav: React.FC = () => {
       </aside>
 
       {isMobileNavOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden flex">
+        <div
+          className="fixed inset-0 z-50 lg:hidden flex"
+          role="dialog"
+          aria-modal="true"
+          aria-label={t.navigation.openMenu}
+        >
           <div
-            className="fixed inset-0 bg-slate-950/60"
-            onClick={() => setIsMobileNavOpen(false)}
+            className="fixed inset-0 bg-slate-950/65 backdrop-blur-[1px]"
+            onClick={closeMobileWithFocus}
           />
           <aside className="relative z-10 w-[274px] max-w-[85vw] h-[100dvh]">
             {sidebarContent(false, true)}

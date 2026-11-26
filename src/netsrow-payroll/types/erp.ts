@@ -1,3 +1,4 @@
+import { EInvoicingState } from './einvoicing';
 import { ScreenId } from './payroll';
 
 export type EndpointStatus = 'CONTRACT_READY' | 'DEMO_ONLY';
@@ -194,6 +195,7 @@ export interface SaleRecord {
   status: 'COMPLETED' | 'VOIDED';
   items: SaleItem[];
   internalDocId: string | null;
+  eInvoiceId?: string | null;
 }
 
 export interface InternalDocument {
@@ -441,4 +443,5 @@ export interface ErpDemoState {
   reconciliationItems: AccountingReconciliationItem[];
   workRiskRules: WorkRiskRule[];
   conceptTreatmentRules: ConceptTreatmentRule[];
+  eInvoicing: EInvoicingState;
 }

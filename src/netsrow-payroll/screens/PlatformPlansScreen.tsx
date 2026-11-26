@@ -6,8 +6,12 @@ import {
   Layers,
   Plus,
   ShieldCheck,
-  X,
 } from 'lucide-react';
+import {
+  ErpModal,
+  ErpPageHeader,
+  ErpSurfaceCard,
+} from '../components/ErpUiPrimitives';
 import { MoneyCell } from '../components/MoneyCell';
 import { StatusBadge } from '../components/StatusBadge';
 import { usePlatform } from '../context/PlatformContext';
@@ -141,37 +145,34 @@ export const PlatformPlansScreen: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
-        <div>
-          <h1 className="font-display text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100">
-            {pt.platformNav.plans}
-          </h1>
-          <p className="mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-            {locale === 'es'
-              ? 'Catálogo comercial de planes base y módulos opcionales. Al editar tarifas, las empresas existentes conservan su precio contratado.'
-              : 'Commercial catalog of base plans and paid add-on modules. Existing tenant subscriptions keep their agreed rates.'}
-          </p>
-        </div>
-
-        <button
-          type="button"
-          onClick={openCreateModal}
-          className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded bg-emerald-600 hover:bg-emerald-700 text-xs font-semibold text-white whitespace-nowrap shrink-0"
-        >
-          <Plus className="w-4 h-4" />
-          <span>{locale === 'es' ? 'Nuevo plan demo' : 'New demo plan'}</span>
-        </button>
-      </div>
+      <ErpPageHeader
+        title={pt.platformNav.plans}
+        subtitle={
+          locale === 'es'
+            ? 'Catálogo comercial de planes base y módulos opcionales. Al editar tarifas, las empresas existentes conservan su precio contratado.'
+            : 'Commercial catalog of base plans and paid add-on modules. Existing tenant subscriptions keep their agreed rates.'
+        }
+        actions={
+          <button
+            type="button"
+            onClick={openCreateModal}
+            className="nr-focus-ring nr-transition inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg bg-[var(--nr-primary)] hover:bg-[var(--nr-primary-hover)] text-xs font-semibold text-[var(--nr-primary-fg)] whitespace-nowrap shrink-0"
+          >
+            <Plus className="w-4 h-4" />
+            <span>{locale === 'es' ? 'Nuevo plan demo' : 'New demo plan'}</span>
+          </button>
+        }
+      />
 
       {/* Rate preservation notice */}
-      <div className="rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-3 flex items-start gap-2.5 text-xs text-slate-600 dark:text-slate-300">
-        <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+      <ErpSurfaceCard padding="sm" className="flex items-start gap-2.5 text-xs text-[var(--nr-text-secondary)]">
+        <ShieldCheck className="w-4 h-4 text-[var(--nr-primary)] shrink-0 mt-0.5" />
         <span>
           {locale === 'es'
             ? 'Regla comercial vigente: los planes incluyen módulos base sin duplicar cobro al combinarlos con complementos. Los cambios de tarifa en catálogo aplican desde su fecha efectiva únicamente a nuevas altas o renovaciones negociadas.'
             : 'Commercial rule: included plan modules are never double-charged as add-ons. Catalog rate changes take effect on the chosen effective date without overwriting existing contracted prices.'}
         </span>
-      </div>
+      </ErpSurfaceCard>
 
       {/* Plans grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -180,17 +181,17 @@ export const PlatformPlansScreen: React.FC = () => {
             (t) => t.planId === plan.id
           ).length;
           return (
-            <div
+            <ErpSurfaceCard
               key={plan.id}
-              className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 flex flex-col justify-between gap-4"
+              className="flex flex-col justify-between gap-4"
             >
               <div className="space-y-3">
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <div className="font-mono-num text-[11px] font-bold text-emerald-700 dark:text-emerald-400">
+                    <div className="font-mono-num text-[11px] font-bold text-[var(--nr-primary)]">
                       {plan.code}
                     </div>
-                    <h2 className="font-display text-base font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+                    <h2 className="font-display text-base font-bold text-[var(--nr-text)] mt-0.5">
                       {locale === 'es' ? plan.nameEs : plan.nameEn}
                     </h2>
                   </div>
@@ -208,19 +209,19 @@ export const PlatformPlansScreen: React.FC = () => {
                   />
                 </div>
 
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p className="text-xs text-[var(--nr-text-secondary)]">
                   {locale === 'es' ? plan.descriptionEs : plan.descriptionEn}
                 </p>
 
-                <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-baseline justify-between">
+                <div className="pt-2 border-t border-[var(--nr-border)] flex items-baseline justify-between">
                   <MoneyCell amount={plan.monthlyBasePriceDop} locale={locale} size="lg" emphasize />
-                  <span className="text-[11px] font-mono-num text-slate-500">
+                  <span className="text-[11px] font-mono-num text-[var(--nr-text-secondary)]">
                     {locale === 'es' ? 'Vigencia' : 'Eff.'} {plan.effectiveDate}
                   </span>
                 </div>
 
                 <div className="space-y-1.5">
-                  <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                  <div className="text-[11px] font-semibold uppercase tracking-wider text-[var(--nr-text-secondary)]">
                     {locale === 'es' ? 'Módulos incluidos' : 'Included modules'}
                   </div>
                   <div className="flex flex-wrap gap-1.5">
@@ -229,7 +230,7 @@ export const PlatformPlansScreen: React.FC = () => {
                       return (
                         <span
                           key={modCode}
-                          className="rounded border border-emerald-200 dark:border-emerald-800/70 bg-emerald-50/50 dark:bg-emerald-950/30 px-2 py-0.5 text-[11px] font-medium text-emerald-900 dark:text-emerald-200"
+                          className="rounded-md border border-[var(--nr-success-border)] bg-[var(--nr-success-bg)] px-2 py-0.5 text-[11px] font-medium text-[var(--nr-success)]"
                         >
                           {def ? (locale === 'es' ? def.nameEs : def.nameEn) : modCode}
                         </span>
@@ -239,30 +240,30 @@ export const PlatformPlansScreen: React.FC = () => {
                 </div>
               </div>
 
-              <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
-                <span className="text-slate-500 font-mono-num">
+              <div className="pt-3 border-t border-[var(--nr-border)] flex items-center justify-between text-xs">
+                <span className="text-[var(--nr-text-secondary)] font-mono-num">
                   {activeTenantsCount}{' '}
                   {locale === 'es' ? 'empresas asignadas' : 'assigned companies'}
                 </span>
                 <button
                   type="button"
                   onClick={() => openEditModal(plan)}
-                  className="inline-flex items-center gap-1 rounded border border-slate-200 dark:border-slate-700 px-2.5 py-1 font-semibold hover:bg-slate-50 dark:hover:bg-slate-800"
+                  className="nr-focus-ring nr-transition inline-flex items-center gap-1 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-2.5 py-1 font-semibold text-[var(--nr-text)] hover:border-[var(--nr-primary)]"
                 >
                   <Edit3 className="w-3.5 h-3.5" />
                   <span>{locale === 'es' ? 'Editar' : 'Edit'}</span>
                 </button>
               </div>
-            </div>
+            </ErpSurfaceCard>
           );
         })}
       </div>
 
       {/* Modules & Dependency Matrix */}
-      <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden">
-        <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-800 flex items-center gap-2">
-          <Layers className="w-4 h-4 text-emerald-600" />
-          <h2 className="font-display text-sm font-bold">
+      <ErpSurfaceCard padding="none" className="overflow-hidden">
+        <div className="px-4 py-3 border-b border-[var(--nr-border)] flex items-center gap-2">
+          <Layers className="w-4 h-4 text-[var(--nr-primary)]" />
+          <h2 className="font-display text-sm font-bold text-[var(--nr-text)]">
             {locale === 'es'
               ? 'Catálogo de módulos y dependencias técnicas'
               : 'Modules & dependency catalog'}
@@ -271,7 +272,7 @@ export const PlatformPlansScreen: React.FC = () => {
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
-              <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 text-slate-500">
+              <tr className="border-b border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] text-[var(--nr-text-secondary)]">
                 <th className="py-2.5 px-4 text-left font-semibold">
                   {locale === 'es' ? 'Código' : 'Code'}
                 </th>
@@ -286,21 +287,21 @@ export const PlatformPlansScreen: React.FC = () => {
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+            <tbody className="divide-y divide-[var(--nr-border)]">
               {platformState.modules.map((mod) => (
                 <tr key={mod.code}>
-                  <td className="py-2.5 px-4 font-mono-num font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                  <td className="py-2.5 px-4 font-mono-num font-bold text-[var(--nr-text)] whitespace-nowrap">
                     {mod.code}
                   </td>
                   <td className="py-2.5 px-4">
-                    <div className="font-semibold text-slate-900 dark:text-slate-100">
+                    <div className="font-semibold text-[var(--nr-text)]">
                       {locale === 'es' ? mod.nameEs : mod.nameEn}
                     </div>
-                    <div className="text-[11px] text-slate-500">
+                    <div className="text-[11px] text-[var(--nr-text-secondary)]">
                       {locale === 'es' ? mod.descriptionEs : mod.descriptionEn}
                     </div>
                   </td>
-                  <td className="py-2.5 px-4 font-mono-num text-[11px] text-slate-600 dark:text-slate-400">
+                  <td className="py-2.5 px-4 font-mono-num text-[11px] text-[var(--nr-text-secondary)]">
                     {mod.dependsOn.length === 0
                       ? locale === 'es'
                         ? 'Ninguna (base)'
@@ -322,32 +323,44 @@ export const PlatformPlansScreen: React.FC = () => {
             </tbody>
           </table>
         </div>
-      </div>
+      </ErpSurfaceCard>
 
       {/* Create / Edit Plan Modal */}
-      {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60">
-          <div className="w-full max-w-2xl rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xl max-h-[92vh] flex flex-col">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-800 shrink-0">
-              <h2 className="font-display text-base font-bold">
-                {editingPlanId
-                  ? locale === 'es'
-                    ? `Editar plan · ${code}`
-                    : `Edit plan · ${code}`
-                  : locale === 'es'
-                    ? 'Crear nuevo plan comercial (Solo demo)'
-                    : 'Create commercial plan (Demo only)'}
-              </h2>
-              <button
-                type="button"
-                onClick={() => setModalOpen(false)}
-                className="p-1 text-slate-500"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSavePlan} className="p-4 space-y-4 overflow-y-auto text-xs">
+      <ErpModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        maxWidthClass="max-w-2xl"
+        closeLabel={locale === 'es' ? 'Cerrar' : 'Close'}
+        title={
+          editingPlanId
+            ? locale === 'es'
+              ? `Editar plan · ${code}`
+              : `Edit plan · ${code}`
+            : locale === 'es'
+              ? 'Crear nuevo plan comercial (Solo demo)'
+              : 'Create commercial plan (Demo only)'
+        }
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={() => setModalOpen(false)}
+              className="nr-focus-ring nr-transition h-9 px-3.5 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface)] text-xs font-semibold text-[var(--nr-text)]"
+            >
+              {locale === 'es' ? 'Cancelar' : 'Cancel'}
+            </button>
+            <button
+              type="submit"
+              form="platform-plan-form"
+              disabled={isMutating || !depCheck.valid}
+              className="nr-focus-ring nr-transition h-9 px-4 rounded-lg bg-[var(--nr-primary)] hover:bg-[var(--nr-primary-hover)] disabled:opacity-50 text-xs font-semibold text-[var(--nr-primary-fg)]"
+            >
+              {locale === 'es' ? 'Guardar plan en catálogo' : 'Save catalog plan'}
+            </button>
+          </>
+        }
+      >
+        <form id="platform-plan-form" onSubmit={handleSavePlan} className="space-y-4 text-xs">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="block font-semibold mb-1">
@@ -553,26 +566,8 @@ export const PlatformPlansScreen: React.FC = () => {
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setModalOpen(false)}
-                  className="h-9 px-3.5 rounded border border-slate-300 dark:border-slate-700 font-semibold"
-                >
-                  {locale === 'es' ? 'Cancelar' : 'Cancel'}
-                </button>
-                <button
-                  type="submit"
-                  disabled={isMutating || !depCheck.valid}
-                  className="h-9 px-4 rounded bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-semibold"
-                >
-                  {locale === 'es' ? 'Guardar plan en catálogo' : 'Save catalog plan'}
-                </button>
-              </div>
             </form>
-          </div>
-        </div>
-      )}
+      </ErpModal>
     </div>
   );
 };

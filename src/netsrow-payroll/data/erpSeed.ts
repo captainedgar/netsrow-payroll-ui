@@ -1,4 +1,5 @@
 import { ErpDemoState } from '../types/erp';
+import { createSeedEInvoicingState } from './eInvoicingSeed';
 
 export function createSeedErpState(): ErpDemoState {
   return {
@@ -439,6 +440,7 @@ export function createSeedErpState(): ErpDemoState {
           },
         ],
         internalDocId: 'doc-101',
+        eInvoiceId: 'ecf-1',
       },
       {
         id: 'sal-102',
@@ -482,6 +484,7 @@ export function createSeedErpState(): ErpDemoState {
           },
         ],
         internalDocId: 'doc-102',
+        eInvoiceId: 'ecf-2',
       },
     ],
     internalDocs: [
@@ -848,5 +851,6 @@ export function createSeedErpState(): ErpDemoState {
         subjectToInfotep: false,
       },
     ],
+    eInvoicing: createSeedEInvoicingState(),
   };
 }

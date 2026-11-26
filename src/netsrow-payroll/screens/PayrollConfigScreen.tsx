@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { ShieldCheck, Wallet } from 'lucide-react';
 import { DataTable, DataTableColumn } from '../components/DataTable';
+import { ErpPageHeader } from '../components/ErpUiPrimitives';
 import { StatusBadge } from '../components/StatusBadge';
 import { usePayrollWorkspace } from '../context/PayrollWorkspaceContext';
 import { ConceptTreatmentRule, WorkRiskRule } from '../types/erp';
@@ -53,7 +54,7 @@ export const PayrollConfigScreen: React.FC = () => {
             const rate = lvl === 'I' ? 1.1 : lvl === 'II' ? 1.2 : 1.35;
             updateWorkRiskRule({ ...r, riskLevel: lvl, srlRatePercent: rate });
           }}
-          className="h-8 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 text-xs font-semibold"
+          className="nr-focus-ring nr-transition h-8 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-2 text-xs font-semibold text-[var(--nr-text)]"
         >
           <option value="I">Nivel I (1.10%)</option>
           <option value="II">Nivel II (1.20%)</option>
@@ -66,7 +67,7 @@ export const PayrollConfigScreen: React.FC = () => {
       header: locale === 'es' ? 'Tasa patronal SRL' : 'Employer SRL %',
       align: 'right',
       render: (r) => (
-        <span className="font-mono-num font-bold text-emerald-700 dark:text-emerald-400">
+        <span className="font-mono-num font-bold text-[var(--nr-primary)]">
           {r.srlRatePercent.toFixed(2)}%
         </span>
       ),
@@ -85,8 +86,10 @@ export const PayrollConfigScreen: React.FC = () => {
       minWidthClass: 'min-w-[200px]',
       render: (c) => (
         <div>
-          <div className="font-semibold text-xs">{locale === 'es' ? c.labelEs : c.labelEn}</div>
-          <div className="text-[11px] text-slate-500">{c.category}</div>
+          <div className="font-semibold text-xs text-[var(--nr-text)]">
+            {locale === 'es' ? c.labelEs : c.labelEn}
+          </div>
+          <div className="text-[11px] text-[var(--nr-text-secondary)]">{c.category}</div>
         </div>
       ),
     },
@@ -144,32 +147,28 @@ export const PayrollConfigScreen: React.FC = () => {
 
   return (
     <div className="space-y-5">
-      <div>
-        <div className="flex items-center gap-2">
-          <h1 className="font-display text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100">
-            {mode === 'work_risk' ? t.navigation.workRisk : t.navigation.conceptTreatment}
-          </h1>
-          <StatusBadge label={t.topBar.demoOnlyTag} tone="amber" />
-        </div>
-        <p className="mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-          {mode === 'work_risk'
+      <ErpPageHeader
+        title={mode === 'work_risk' ? t.navigation.workRisk : t.navigation.conceptTreatment}
+        subtitle={
+          mode === 'work_risk'
             ? locale === 'es'
               ? 'Configuración de tasas de Seguro de Riesgos Laborales (SRL) por sucursal y departamento.'
               : 'Occupational Risk Insurance (SRL) rate rules by branch and department.'
             : locale === 'es'
               ? 'Haz clic en las etiquetas de TSS, ISR o INFOTEP para activar o desactivar la base imponible de cada concepto.'
-              : 'Click TSS, ISR, or INFOTEP badges to toggle taxability rules per payroll concept.'}
-        </p>
-      </div>
+              : 'Click TSS, ISR, or INFOTEP badges to toggle taxability rules per payroll concept.'
+        }
+        badge={<StatusBadge label={t.topBar.demoOnlyTag} tone="amber" />}
+      />
 
-      <div className="flex items-center gap-1 border-b border-slate-200 dark:border-slate-800">
+      <div className="flex items-center gap-1 border-b border-[var(--nr-border)]">
         <button
           type="button"
           onClick={() => setActiveScreen('work_risk')}
-          className={`inline-flex items-center gap-1.5 px-3.5 py-2.5 text-xs font-semibold border-b-2 ${
+          className={`nr-focus-ring nr-transition inline-flex items-center gap-1.5 px-3.5 py-2.5 text-xs font-semibold border-b-2 ${
             mode === 'work_risk'
-              ? 'border-emerald-600 text-emerald-700 dark:text-emerald-300'
-              : 'border-transparent text-slate-500'
+              ? 'border-[var(--nr-primary)] text-[var(--nr-primary)]'
+              : 'border-transparent text-[var(--nr-text-secondary)] hover:text-[var(--nr-text)]'
           }`}
         >
           <ShieldCheck className="w-3.5 h-3.5" />
@@ -178,10 +177,10 @@ export const PayrollConfigScreen: React.FC = () => {
         <button
           type="button"
           onClick={() => setActiveScreen('concept_treatment')}
-          className={`inline-flex items-center gap-1.5 px-3.5 py-2.5 text-xs font-semibold border-b-2 ${
+          className={`nr-focus-ring nr-transition inline-flex items-center gap-1.5 px-3.5 py-2.5 text-xs font-semibold border-b-2 ${
             mode === 'concepts'
-              ? 'border-emerald-600 text-emerald-700 dark:text-emerald-300'
-              : 'border-transparent text-slate-500'
+              ? 'border-[var(--nr-primary)] text-[var(--nr-primary)]'
+              : 'border-transparent text-[var(--nr-text-secondary)] hover:text-[var(--nr-text)]'
           }`}
         >
           <Wallet className="w-3.5 h-3.5" />

@@ -72,10 +72,10 @@ export const PlatformSidebar: React.FC<PlatformSidebarProps> = ({
   ];
 
   const renderContent = (compact: boolean, mobile: boolean) => (
-    <div className="flex h-full flex-col bg-[#0F172A] text-slate-100 border-r border-slate-800 select-none">
+    <div className="flex h-full flex-col bg-[#081321] text-slate-100 border-r border-[#1A293D] select-none">
       {/* Brand header */}
       <div
-        className={`flex items-center justify-between h-14 px-3.5 border-b border-slate-800 shrink-0 ${
+        className={`flex items-center justify-between h-14 px-3.5 border-b border-[#1A293D] shrink-0 ${
           compact ? 'justify-center' : ''
         }`}
       >
@@ -85,9 +85,9 @@ export const PlatformSidebar: React.FC<PlatformSidebarProps> = ({
             setActivePlatformScreen('platform_overview');
             if (mobile) handleCloseWithFocus();
           }}
-          className="flex items-center gap-2.5 min-w-0 text-left focus-visible:outline-2 focus-visible:outline-emerald-500 rounded"
+          className="nr-focus-ring flex items-center gap-2.5 min-w-0 text-left rounded-lg"
         >
-          <div className="w-8 h-8 rounded bg-emerald-600 flex items-center justify-center text-white shrink-0">
+          <div className="w-8 h-8 rounded-lg bg-[#047857] flex items-center justify-center text-white shrink-0">
             <Shield className="w-4 h-4" />
           </div>
           {!compact && (
@@ -106,7 +106,7 @@ export const PlatformSidebar: React.FC<PlatformSidebarProps> = ({
           <button
             type="button"
             onClick={handleCloseWithFocus}
-            className="p-1.5 rounded text-slate-400 hover:text-white hover:bg-slate-800 focus-visible:outline-2 focus-visible:outline-emerald-500"
+            className="nr-focus-ring nr-transition p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-[#132B42]"
             aria-label="Cerrar menú"
           >
             <X className="w-4 h-4" />
@@ -128,10 +128,10 @@ export const PlatformSidebar: React.FC<PlatformSidebarProps> = ({
                 if (mobile) onCloseMobile();
               }}
               title={compact ? item.label : undefined}
-              className={`w-full flex items-center gap-2.5 rounded px-3 py-2.5 text-[13px] font-medium transition-colors whitespace-nowrap focus-visible:outline-2 focus-visible:outline-emerald-500 ${
+              className={`nr-focus-ring nr-transition w-full flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-[13px] font-medium whitespace-nowrap ${
                 isActive
-                  ? 'bg-emerald-600 text-white'
-                  : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                  ? 'bg-[#047857] text-white'
+                  : 'text-slate-300 hover:bg-[#132B42]/75 hover:text-white'
               } ${compact ? 'justify-center px-2' : ''}`}
             >
               <Icon
@@ -146,7 +146,7 @@ export const PlatformSidebar: React.FC<PlatformSidebarProps> = ({
       </nav>
 
       {/* Footer always visible */}
-      <div className="p-2.5 border-t border-slate-800 space-y-1.5 shrink-0">
+      <div className="p-2.5 border-t border-[#1A293D] space-y-1.5 shrink-0">
         {!compact && (
           <div className="px-2 py-1 text-[10px] text-slate-400 leading-tight">
             {pt.platformNav.demoTag} · {pt.platformNav.contractNote}
@@ -157,7 +157,7 @@ export const PlatformSidebar: React.FC<PlatformSidebarProps> = ({
           disabled={isMutating}
           onClick={() => resetPlatformDemoData()}
           title={pt.platformNav.resetDemo}
-          className={`w-full flex items-center justify-center gap-2 rounded border border-slate-700/80 bg-slate-800/60 px-2.5 py-2 text-xs font-medium text-amber-300 hover:bg-slate-800 hover:text-amber-200 disabled:opacity-50 transition-colors ${
+          className={`nr-focus-ring nr-transition w-full flex items-center justify-center gap-2 rounded-lg border border-[#1E334A] bg-[#0E1E31] px-2.5 py-2 text-xs font-medium text-amber-300 hover:bg-[#132B42] hover:text-amber-200 disabled:opacity-50 ${
             compact ? 'px-2' : ''
           }`}
         >
@@ -169,7 +169,7 @@ export const PlatformSidebar: React.FC<PlatformSidebarProps> = ({
           <button
             type="button"
             onClick={() => setCollapsed((prev) => !prev)}
-            className="w-full flex items-center justify-center gap-2 rounded px-2.5 py-2 text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className="nr-focus-ring nr-transition w-full flex items-center justify-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium text-slate-400 hover:text-white hover:bg-[#132B42]"
             title={
               compact
                 ? pt.platformNav.expandSidebar

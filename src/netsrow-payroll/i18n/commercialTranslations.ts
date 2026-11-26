@@ -15,8 +15,14 @@ export interface CommercialTranslations {
     regionNote: string;
     headline: string;
     subtitle: string;
+    emailPlaceholder: string;
+    emailValidationHint: string;
     primaryCta: string;
     secondaryCta: string;
+    trustPoints: string[];
+    bottomTrustLead: string;
+    bottomTrustDetail: string;
+    bottomTrustLink: string;
     previewTabPos: string;
     previewTabDash: string;
     previewDemoNote: string;
@@ -206,14 +212,24 @@ export const COMMERCIAL_TRANSLATIONS: Record<Locale, CommercialTranslations> = {
       closeMenu: 'Cerrar menú',
     },
     hero: {
-      regionNote: 'Dirigido a micro y medianas empresas de República Dominicana · Vista comercial demo',
-      headline: 'Ventas, caja e inventario en un solo lugar',
+      regionNote: 'ERP y punto de venta para empresas de República Dominicana · Vista comercial demo',
+      headline: 'Ventas, inventario y facturación electrónica en un solo lugar.',
       subtitle:
-        'Configura tu ERP por módulos y cotiza tu punto de venta con equipos, capacitación y facturación electrónica según las necesidades de tu negocio.',
+        'Gestiona punto de venta, caja, inventarios, nómina, contabilidad y comprobantes electrónicos (e-CF) desde una misma plataforma, en software o paquete completo.',
+      emailPlaceholder: 'Tu correo de trabajo o WhatsApp',
+      emailValidationHint: 'Escribe un correo o WhatsApp válido, por ejemplo ana@tuempresa.do',
       primaryCta: 'Configura tu plan',
       secondaryCta: 'Ver paquete completo',
+      trustPoints: [
+        'POS, caja, inventario y e-CF',
+        'Nómina RD, contabilidad y CxC/CxP',
+        'Cotización en RD$ y demo al instante',
+      ],
+      bottomTrustLead: 'Todo tu negocio en regla desde un solo sistema',
+      bottomTrustDetail: 'con punto de venta, nómina, contabilidad y configuración modular de facturación electrónica (e-CF).',
+      bottomTrustLink: 'Ver facturación electrónica',
       previewTabPos: 'Terminal POS',
-      previewTabDash: 'Panel general',
+      previewTabDash: 'Tablero ERP',
       previewDemoNote: 'Solo demo · Datos ficticios',
     },
     contractModes: {
@@ -444,14 +460,24 @@ export const COMMERCIAL_TRANSLATIONS: Record<Locale, CommercialTranslations> = {
       closeMenu: 'Close menu',
     },
     hero: {
-      regionNote: 'Built for micro and mid-sized businesses in the Dominican Republic · Demo preview',
-      headline: 'Sales, cashbox, and inventory in one place',
+      regionNote: 'ERP and point of sale for Dominican businesses · Demo preview',
+      headline: 'Sales, inventory, and electronic invoicing in one place.',
       subtitle:
-        'Configure your ERP by module and quote your point of sale with hardware, training, and electronic invoicing tailored to your business.',
+        'Run point of sale, cashbox, inventory, payroll, accounting, and modular e-CF electronic invoicing from one unified platform—software only or full POS bundle.',
+      emailPlaceholder: 'Your work email or WhatsApp',
+      emailValidationHint: 'Enter a valid email or WhatsApp number, e.g. ana@yourcompany.do',
       primaryCta: 'Configure your plan',
       secondaryCta: 'See full POS bundle',
+      trustPoints: [
+        'POS, cashbox, inventory & e-CF',
+        'DR payroll, accounting & AR/AP',
+        'Transparent RD$ quote & live demo',
+      ],
+      bottomTrustLead: 'Complete operational control in one ERP',
+      bottomTrustDetail: 'with POS, payroll, accounting, and modular e-CF electronic invoicing readiness.',
+      bottomTrustLink: 'Explore electronic invoicing',
       previewTabPos: 'POS Terminal',
-      previewTabDash: 'Overview',
+      previewTabDash: 'ERP Overview',
       previewDemoNote: 'Demo only · Fictional data',
     },
     contractModes: {

@@ -24,7 +24,7 @@ export const PlatformTopBar: React.FC<PlatformTopBarProps> = ({
   const operatorName = authSession?.fullName ?? 'Operador Plataforma';
 
   return (
-    <header className="sticky top-0 z-30 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
+    <header className="sticky top-0 z-30 bg-[var(--nr-surface)] border-b border-[var(--nr-border)]">
       <div className="flex flex-wrap items-center justify-between gap-3 px-4 sm:px-6 py-2.5">
         {/* Left: Mobile drawer trigger + Platform title */}
         <div className="flex items-center gap-2.5 min-w-0">
@@ -33,17 +33,17 @@ export const PlatformTopBar: React.FC<PlatformTopBarProps> = ({
             type="button"
             onClick={onOpenMobileMenu}
             aria-label={pt.platformNav.openMenu}
-            className="lg:hidden inline-flex items-center justify-center w-9 h-9 rounded border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0 focus-visible:outline-2 focus-visible:outline-emerald-500"
+            className="nr-focus-ring nr-transition lg:hidden inline-flex items-center justify-center w-9 h-9 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface)] text-[var(--nr-text)] hover:bg-[var(--nr-surface-muted)] shrink-0"
           >
             <Menu className="w-4 h-4" />
           </button>
 
           <div className="flex items-center gap-2 min-w-0">
-            <span className="font-display text-sm font-bold text-slate-900 dark:text-slate-100 truncate">
+            <span className="font-display text-sm font-bold text-[var(--nr-text)] truncate">
               {pt.platformNav.brandTitle}
             </span>
-            <span className="hidden sm:inline text-xs text-slate-400">·</span>
-            <span className="hidden sm:inline rounded px-2 py-0.5 border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/50 text-[11px] font-semibold text-amber-800 dark:text-amber-300 whitespace-nowrap">
+            <span className="hidden sm:inline text-xs text-[var(--nr-text-secondary)]">·</span>
+            <span className="hidden sm:inline rounded-md px-2 py-0.5 border border-[var(--nr-warning-border)] bg-[var(--nr-warning-bg)] text-[11px] font-semibold text-[var(--nr-warning)] whitespace-nowrap">
               {pt.platformNav.demoTag}
             </span>
           </div>
@@ -51,25 +51,25 @@ export const PlatformTopBar: React.FC<PlatformTopBarProps> = ({
 
         {/* Right: Operator name + ES/EN + Light/Dark + Sign out */}
         <div className="flex items-center gap-2 flex-wrap">
-          <div className="hidden md:flex items-center gap-2 pr-2 border-r border-slate-200 dark:border-slate-700">
+          <div className="hidden md:flex items-center gap-2 pr-2 border-r border-[var(--nr-border)]">
             <div className="text-right leading-tight">
-              <div className="text-xs font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">
+              <div className="text-xs font-semibold text-[var(--nr-text)] whitespace-nowrap">
                 {operatorName}
               </div>
-              <div className="text-[10px] text-slate-500 dark:text-slate-400 whitespace-nowrap">
+              <div className="text-[10px] text-[var(--nr-text-secondary)] whitespace-nowrap">
                 {pt.platformNav.operatorRoleLabel}
               </div>
             </div>
           </div>
 
-          <div className="inline-flex items-center rounded border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 p-0.5 shrink-0">
+          <div className="inline-flex items-center rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-muted)] p-0.5 shrink-0">
             <button
               type="button"
               onClick={() => setLocale('es')}
-              className={`px-2 py-1 text-[11px] font-semibold rounded-sm whitespace-nowrap ${
+              className={`nr-focus-ring nr-transition px-2 py-1 text-[11px] font-semibold rounded-md whitespace-nowrap ${
                 locale === 'es'
-                  ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white'
-                  : 'text-slate-600 dark:text-slate-400'
+                  ? 'bg-[var(--nr-surface)] text-[var(--nr-text)] shadow-xs'
+                  : 'text-[var(--nr-text-secondary)] hover:text-[var(--nr-text)]'
               }`}
             >
               ES
@@ -77,10 +77,10 @@ export const PlatformTopBar: React.FC<PlatformTopBarProps> = ({
             <button
               type="button"
               onClick={() => setLocale('en')}
-              className={`px-2 py-1 text-[11px] font-semibold rounded-sm whitespace-nowrap ${
+              className={`nr-focus-ring nr-transition px-2 py-1 text-[11px] font-semibold rounded-md whitespace-nowrap ${
                 locale === 'en'
-                  ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white'
-                  : 'text-slate-600 dark:text-slate-400'
+                  ? 'bg-[var(--nr-surface)] text-[var(--nr-text)] shadow-xs'
+                  : 'text-[var(--nr-text-secondary)] hover:text-[var(--nr-text)]'
               }`}
             >
               EN
@@ -90,12 +90,12 @@ export const PlatformTopBar: React.FC<PlatformTopBarProps> = ({
           <button
             type="button"
             onClick={toggleTheme}
-            className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 shrink-0 whitespace-nowrap"
+            className="nr-focus-ring nr-transition inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface)] text-xs font-medium text-[var(--nr-text)] hover:bg-[var(--nr-surface-muted)] shrink-0 whitespace-nowrap"
           >
             {theme === 'light' ? (
-              <Moon className="w-3.5 h-3.5 text-slate-600" />
+              <Moon className="w-3.5 h-3.5 text-[var(--nr-text-secondary)]" />
             ) : (
-              <Sun className="w-3.5 h-3.5 text-amber-400" />
+              <Sun className="w-3.5 h-3.5 text-[var(--nr-warning)]" />
             )}
             <span className="hidden sm:inline">
               {theme === 'light'
@@ -111,9 +111,9 @@ export const PlatformTopBar: React.FC<PlatformTopBarProps> = ({
           <button
             type="button"
             onClick={() => logoutSession('/platform/login')}
-            className="inline-flex items-center gap-1.5 h-8 px-3 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700 whitespace-nowrap shrink-0"
+            className="nr-focus-ring nr-transition inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface)] text-xs font-semibold text-[var(--nr-text)] hover:bg-[var(--nr-surface-muted)] whitespace-nowrap shrink-0"
           >
-            <LogOut className="w-3.5 h-3.5 text-slate-500" />
+            <LogOut className="w-3.5 h-3.5 text-[var(--nr-text-secondary)]" />
             <span>{pt.auth.logoutButton}</span>
           </button>
         </div>

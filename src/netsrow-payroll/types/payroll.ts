@@ -12,6 +12,12 @@ export type ScreenId =
   | 'overview'
   | 'pos'
   | 'sales_ar'
+  | 'e_invoicing'
+  | 'e_invoicing_docs'
+  | 'e_invoicing_issue'
+  | 'e_invoicing_lookup'
+  | 'e_invoicing_sequences'
+  | 'e_invoicing_config'
   | 'customers'
   | 'cashbox'
   | 'cashbox_shift'
@@ -287,3 +293,4 @@ export interface PayrollApiClient {
 }
 
 export * from './erp';
+export * from './einvoicing';

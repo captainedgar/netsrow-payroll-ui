@@ -1,5 +1,10 @@
 import React, { useMemo, useState } from 'react';
 import { LifeBuoy, MessageSquarePlus, ShieldCheck } from 'lucide-react';
+import {
+  ErpPageHeader,
+  ErpStatePanel,
+  ErpSurfaceCard,
+} from '../components/ErpUiPrimitives';
 import { StatusBadge } from '../components/StatusBadge';
 import { usePlatform } from '../context/PlatformContext';
 import { SupportTicketStatus } from '../types/platform';
@@ -50,38 +55,36 @@ export const PlatformSupportScreen: React.FC = () => {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="font-display text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100">
-          {pt.platformNav.support}
-        </h1>
-        <p className="mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-          {locale === 'es'
+      <ErpPageHeader
+        title={pt.platformNav.support}
+        subtitle={
+          locale === 'es'
             ? 'Mesa de soporte SaaS por empresa. Permite asignar operador, actualizar estado y registrar notas internas.'
-            : 'SaaS support desk per tenant. Assign operators, update statuses, and record internal notes.'}
-        </p>
-      </div>
+            : 'SaaS support desk per tenant. Assign operators, update statuses, and record internal notes.'
+        }
+      />
 
       {/* Strict SaaS privacy boundary notice */}
-      <div className="rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-3 flex items-start gap-2.5 text-xs text-slate-600 dark:text-slate-300">
-        <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+      <ErpSurfaceCard padding="sm" className="flex items-start gap-2.5 text-xs text-[var(--nr-text-secondary)]">
+        <ShieldCheck className="w-4 h-4 text-[var(--nr-primary)] shrink-0 mt-0.5" />
         <span>
           {locale === 'es'
             ? 'Aislamiento operativo: la consola de soporte SaaS no permite suplantar sesiones ni consultar salarios, nóminas o ventas del cliente.'
             : 'Operational isolation: SaaS support does not impersonate client sessions or expose tenant salaries, payrolls, or sales.'}
         </span>
-      </div>
+      </ErpSurfaceCard>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
         {/* Ticket list */}
         <div className="lg:col-span-5 space-y-3">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+            <span className="text-xs font-bold uppercase tracking-wider text-[var(--nr-text-secondary)]">
               {locale === 'es' ? 'Tickets demo' : 'Demo tickets'}
             </span>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as 'ALL' | SupportTicketStatus)}
-              className="h-8 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 text-xs font-semibold"
+              className="nr-focus-ring h-8 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-2.5 text-xs font-semibold text-[var(--nr-text)]"
             >
               <option value="ALL">{locale === 'es' ? 'Todos' : 'All'}</option>
               <option value="OPEN">{pt.ticketStatuses.OPEN}</option>
@@ -98,14 +101,14 @@ export const PlatformSupportScreen: React.FC = () => {
                   key={tkt.id}
                   type="button"
                   onClick={() => setSelectedTicketId(tkt.id)}
-                  className={`w-full text-left rounded-lg border p-3.5 transition-colors space-y-1.5 ${
+                  className={`nr-focus-ring nr-transition w-full text-left rounded-xl border p-3.5 space-y-1.5 ${
                     active
-                      ? 'border-emerald-500 bg-emerald-50/40 dark:bg-emerald-950/30'
-                      : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700'
+                      ? 'border-[var(--nr-primary)] bg-[var(--nr-success-bg)]'
+                      : 'border-[var(--nr-border)] bg-[var(--nr-surface)] hover:border-[var(--nr-primary)]/60'
                   }`}
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <span className="font-mono-num text-[11px] font-bold text-emerald-700 dark:text-emerald-400">
+                    <span className="font-mono-num text-[11px] font-bold text-[var(--nr-primary)]">
                       {tkt.ticketNumber}
                     </span>
                     <StatusBadge
@@ -119,10 +122,10 @@ export const PlatformSupportScreen: React.FC = () => {
                       }
                     />
                   </div>
-                  <div className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                  <div className="text-xs font-bold text-[var(--nr-text)]">
                     {locale === 'es' ? tkt.subjectEs : tkt.subjectEn}
                   </div>
-                  <div className="flex items-center justify-between text-[11px] text-slate-500">
+                  <div className="flex items-center justify-between text-[11px] text-[var(--nr-text-secondary)]">
                     <span>{tkt.tenantName}</span>
                     <span>{tkt.assignedTo}</span>
                   </div>
@@ -135,12 +138,12 @@ export const PlatformSupportScreen: React.FC = () => {
         {/* Ticket detail */}
         <div className="lg:col-span-7">
           {selectedTicket ? (
-            <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 space-y-4">
-              <div className="flex flex-wrap items-start justify-between gap-3 pb-3 border-b border-slate-200 dark:border-slate-800">
+            <ErpSurfaceCard className="space-y-4">
+              <div className="flex flex-wrap items-start justify-between gap-3 pb-3 border-b border-[var(--nr-border)]">
                 <div>
                   <div className="flex items-center gap-2">
-                    <LifeBuoy className="w-4 h-4 text-emerald-600" />
-                    <span className="font-mono-num text-xs font-bold text-emerald-700 dark:text-emerald-400">
+                    <LifeBuoy className="w-4 h-4 text-[var(--nr-primary)]" />
+                    <span className="font-mono-num text-xs font-bold text-[var(--nr-primary)]">
                       {selectedTicket.ticketNumber}
                     </span>
                     <StatusBadge
@@ -148,26 +151,26 @@ export const PlatformSupportScreen: React.FC = () => {
                       tone="neutral"
                     />
                   </div>
-                  <h2 className="font-display text-base font-bold mt-1">
+                  <h2 className="font-display text-base font-bold text-[var(--nr-text)] mt-1">
                     {locale === 'es' ? selectedTicket.subjectEs : selectedTicket.subjectEn}
                   </h2>
                   <button
                     type="button"
                     onClick={() => openTenantDetail(selectedTicket.tenantId)}
-                    className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:underline mt-0.5"
+                    className="nr-focus-ring text-xs font-semibold text-[var(--nr-primary)] hover:underline mt-0.5 rounded"
                   >
                     {selectedTicket.tenantName}
                   </button>
                 </div>
 
-                <span className="font-mono-num text-[11px] text-slate-500">
+                <span className="font-mono-num text-[11px] text-[var(--nr-text-secondary)]">
                   {selectedTicket.createdAt}
                 </span>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                 <div>
-                  <label className="block font-semibold text-slate-500 mb-1">
+                  <label className="block font-semibold text-[var(--nr-text-secondary)] mb-1">
                     {locale === 'es' ? 'Estado del ticket' : 'Ticket status'}
                   </label>
                   <select
@@ -179,7 +182,7 @@ export const PlatformSupportScreen: React.FC = () => {
                         status: e.target.value as SupportTicketStatus,
                       })
                     }
-                    className="w-full h-9 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 font-semibold"
+                    className="nr-focus-ring w-full h-9 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-2.5 font-semibold text-[var(--nr-text)]"
                   >
                     <option value="OPEN">{pt.ticketStatuses.OPEN}</option>
                     <option value="IN_PROGRESS">{pt.ticketStatuses.IN_PROGRESS}</option>
@@ -188,7 +191,7 @@ export const PlatformSupportScreen: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-500 mb-1">
+                  <label className="block font-semibold text-[var(--nr-text-secondary)] mb-1">
                     {locale === 'es' ? 'Operador asignado' : 'Assigned operator'}
                   </label>
                   <select
@@ -200,7 +203,7 @@ export const PlatformSupportScreen: React.FC = () => {
                         assignedTo: e.target.value,
                       })
                     }
-                    className="w-full h-9 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 font-semibold"
+                    className="nr-focus-ring w-full h-9 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-2.5 font-semibold text-[var(--nr-text)]"
                   >
                     {OPERATORS.map((op) => (
                       <option key={op} value={op}>
@@ -212,13 +215,13 @@ export const PlatformSupportScreen: React.FC = () => {
               </div>
 
               {/* Internal notes */}
-              <div className="pt-3 border-t border-slate-200 dark:border-slate-800 space-y-3">
-                <div className="text-xs font-bold uppercase tracking-wider text-slate-500">
+              <div className="pt-3 border-t border-[var(--nr-border)] space-y-3">
+                <div className="text-xs font-bold uppercase tracking-wider text-[var(--nr-text-secondary)]">
                   {locale === 'es' ? 'Notas internas de seguimiento' : 'Internal support notes'}
                 </div>
 
                 {selectedTicket.internalNotes.length === 0 ? (
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-[var(--nr-text-secondary)]">
                     {locale === 'es'
                       ? 'Sin notas internas todavía.'
                       : 'No internal notes recorded yet.'}
@@ -228,15 +231,15 @@ export const PlatformSupportScreen: React.FC = () => {
                     {selectedTicket.internalNotes.map((n) => (
                       <div
                         key={n.id}
-                        className="rounded border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 p-3 text-xs space-y-1"
+                        className="rounded-xl border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] p-3 text-xs space-y-1"
                       >
-                        <div className="flex items-center justify-between text-[11px] text-slate-500">
-                          <span className="font-semibold text-slate-800 dark:text-slate-200">
+                        <div className="flex items-center justify-between text-[11px] text-[var(--nr-text-secondary)]">
+                          <span className="font-semibold text-[var(--nr-text)]">
                             {n.author}
                           </span>
                           <span className="font-mono-num">{n.timestamp}</span>
                         </div>
-                        <p className="text-slate-700 dark:text-slate-300">{n.text}</p>
+                        <p className="text-[var(--nr-text-secondary)]">{n.text}</p>
                       </div>
                     ))}
                   </div>
@@ -251,23 +254,28 @@ export const PlatformSupportScreen: React.FC = () => {
                         ? 'Agregar nota interna de operador…'
                         : 'Add internal operator note…'
                     }
-                    className="flex-1 h-9 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 text-xs"
+                    className="nr-focus-ring nr-transition flex-1 h-9 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-3 text-xs text-[var(--nr-text)]"
                   />
                   <button
                     type="submit"
                     disabled={isMutating || !noteInput.trim()}
-                    className="inline-flex items-center justify-center gap-1.5 h-9 px-3.5 rounded bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-xs font-semibold text-white whitespace-nowrap"
+                    className="nr-focus-ring nr-transition inline-flex items-center justify-center gap-1.5 h-9 px-3.5 rounded-lg bg-[var(--nr-primary)] hover:bg-[var(--nr-primary-hover)] disabled:opacity-50 text-xs font-semibold text-[var(--nr-primary-fg)] whitespace-nowrap"
                   >
                     <MessageSquarePlus className="w-3.5 h-3.5" />
                     <span>{locale === 'es' ? 'Guardar nota' : 'Save note'}</span>
                   </button>
                 </form>
               </div>
-            </div>
+            </ErpSurfaceCard>
           ) : (
-            <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 text-center text-xs text-slate-500">
-              {locale === 'es' ? 'No hay tickets para este filtro.' : 'No matching tickets.'}
-            </div>
+            <ErpStatePanel
+              variant="empty"
+              title={
+                locale === 'es'
+                  ? 'No hay tickets para este filtro.'
+                  : 'No matching tickets.'
+              }
+            />
           )}
         </div>
       </div>

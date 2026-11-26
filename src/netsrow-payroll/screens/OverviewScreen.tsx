@@ -5,12 +5,19 @@ import {
   Boxes,
   Calculator,
   ClipboardCheck,
+  FileCheck2,
   Landmark,
   MonitorSmartphone,
+  PackageCheck,
   ReceiptText,
   TrendingUp,
-  X,
 } from 'lucide-react';
+import {
+  ErpModal,
+  ErpPageHeader,
+  ErpStatePanel,
+  ErpSurfaceCard,
+} from '../components/ErpUiPrimitives';
 import { MoneyCell } from '../components/MoneyCell';
 import { RecentActivityFeed } from '../components/RecentActivityFeed';
 import { StatusBadge } from '../components/StatusBadge';
@@ -49,11 +56,16 @@ export const OverviewScreen: React.FC = () => {
     [erpState.products]
   );
 
+  const activeProductsCount = useMemo(
+    () => erpState.products.filter((p) => p.active).length,
+    [erpState.products]
+  );
+
   const periodSalesTotal = useMemo(() => {
-    const liveNovSales = erpState.sales
+    const livePeriodSales = erpState.sales
       .filter((s) => s.status === 'COMPLETED' && s.date.startsWith(periodCode))
       .reduce((acc, s) => acc + s.total, 0);
-    if (liveNovSales > 0) return liveNovSales;
+    if (livePeriodSales > 0) return livePeriodSales;
     const baseByMonth: Record<string, number> = {
       '2026-10': 142800,
       '2026-09': 128450,
@@ -136,6 +148,24 @@ export const OverviewScreen: React.FC = () => {
     return { rows, maxVal };
   }, [erpState.sales]);
 
+  // Compute genuine period-over-period delta ONLY when historical prior-month value exists
+  const salesDeltaPct = useMemo(() => {
+    const idx = chartSeries.rows.findIndex((r) => r.code === periodCode);
+    if (idx <= 0) return null;
+    const prev = chartSeries.rows[idx - 1]?.sales ?? 0;
+    if (prev <= 0 || periodSalesTotal <= 0) return null;
+    return Math.round(((periodSalesTotal - prev) / prev) * 1000) / 10;
+  }, [chartSeries.rows, periodCode, periodSalesTotal]);
+
+  const payrollDeltaPct = useMemo(() => {
+    if (periodPayrollCost === null) return null;
+    const idx = chartSeries.rows.findIndex((r) => r.code === periodCode);
+    if (idx <= 0) return null;
+    const prev = chartSeries.rows[idx - 1]?.payroll ?? 0;
+    if (prev <= 0) return null;
+    return Math.round(((periodPayrollCost - prev) / prev) * 1000) / 10;
+  }, [chartSeries.rows, periodCode, periodPayrollCost]);
+
   const incidences = useMemo<DashboardIncidence[]>(() => {
     const list: DashboardIncidence[] = [];
     const currentRun = dashboardPeriod?.runs.find(
@@ -194,51 +224,72 @@ export const OverviewScreen: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header + Period Selector */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-        <div>
-          <h1 className="font-display text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100">
-            {locale === 'es' ? 'Inicio · Panel Ejecutivo ERP' : 'Home · ERP Executive Overview'}
-          </h1>
-          <p className="mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-            {erpState.company.name} · {activeBranch?.name ?? ''} ·{' '}
-            {locale === 'es'
-              ? 'Resumen en tiempo real de operación, caja, inventario y nómina.'
-              : 'Real-time overview of sales, cashbox, inventory, and payroll.'}
-          </p>
+      {/* Subtle Navy Gradient Executive Header */}
+      <ErpPageHeader
+        variant="hero"
+        eyebrow={`${erpState.company.name} · ${activeBranch?.name ?? ''}`}
+        title={locale === 'es' ? 'Panel operativo del negocio' : 'Business Operations Overview'}
+        subtitle={
+          locale === 'es'
+            ? 'Control diario de ventas, caja, inventario y cumplimiento de nómina en tiempo real.'
+            : 'Daily control across sales, cash register, inventory, and payroll compliance.'
+        }
+        actions={
+          <button
+            type="button"
+            onClick={() => setActiveScreen('pos')}
+            className="nr-focus-ring nr-transition inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-[#047857] hover:bg-[#065F46] text-xs sm:text-sm font-semibold text-white whitespace-nowrap"
+          >
+            <MonitorSmartphone className="w-4 h-4 shrink-0" />
+            <span>{locale === 'es' ? 'Nueva venta POS' : 'New POS Sale'}</span>
+          </button>
+        }
+      />
+
+      {/* Period Selector Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-xs text-[var(--nr-text-secondary)]">
+          <span className="font-semibold text-[var(--nr-text)]">
+            {locale === 'es' ? 'Período activo:' : 'Active period:'}
+          </span>
+          <span className="font-mono-num">
+            {dashboardPeriod ? (locale === 'es' ? dashboardPeriod.nameEs : dashboardPeriod.nameEn) : '—'}
+          </span>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">
-            {locale === 'es' ? 'Período del panel:' : 'Dashboard period:'}
-          </span>
-          <div className="inline-flex flex-wrap items-center gap-1 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 p-1">
-            {periods.map((p) => {
-              const selected = p.id === dashboardPeriod?.id;
-              return (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() => selectPeriod(p.id, false)}
-                  className={`px-2.5 py-1 rounded text-xs font-semibold transition-colors whitespace-nowrap ${
-                    selected
-                      ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                  }`}
-                >
-                  {locale === 'es' ? p.nameEs : p.nameEn}
-                </button>
-              );
-            })}
-          </div>
+        <div
+          role="group"
+          aria-label={locale === 'es' ? 'Seleccionar período del panel' : 'Select dashboard period'}
+          className="inline-flex flex-wrap items-center gap-1 rounded-xl border border-[var(--nr-border)] bg-[var(--nr-surface)] p-1"
+        >
+          {periods.map((p) => {
+            const selected = p.id === dashboardPeriod?.id;
+            return (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => selectPeriod(p.id, false)}
+                className={`nr-focus-ring nr-transition px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap ${
+                  selected
+                    ? 'bg-[var(--nr-primary)] text-[var(--nr-primary-fg)]'
+                    : 'text-[var(--nr-text-secondary)] hover:text-[var(--nr-text)] hover:bg-[var(--nr-surface-muted)]'
+                }`}
+              >
+                {locale === 'es' ? p.nameEs : p.nameEn}
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* 4 Live KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3.5">
-        <div className="rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4">
-          <div className="flex items-center justify-between gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
-            <span>{locale === 'es' ? 'Ventas del período' : 'Period Sales'}</span>
+      {/* 4 Prioritized KPI Cards: Ventas, Caja, Inventario/Alertas, Nómina */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3.5 sm:gap-4">
+        {/* 1. Ventas del período */}
+        <ErpSurfaceCard className="flex flex-col justify-between gap-2 min-w-0">
+          <div className="flex flex-wrap items-center justify-between gap-1.5">
+            <span className="text-xs font-semibold text-[var(--nr-text-secondary)] leading-tight">
+              {locale === 'es' ? 'Ventas del período' : 'Period Sales'}
+            </span>
             <StatusBadge
               activityStatus={periodSalesTotal > 0 ? 'active' : 'pending'}
               locale={locale}
@@ -253,54 +304,35 @@ export const OverviewScreen: React.FC = () => {
               }
             />
           </div>
-          <div className="mt-2">
+          <div className="min-w-0 flex flex-wrap items-baseline justify-between gap-2">
             <MoneyCell amount={periodSalesTotal} locale={locale} size="lg" emphasize />
+            {salesDeltaPct !== null && (
+              <span
+                data-tabular="true"
+                className={`font-mono-num text-[11px] font-semibold ${
+                  salesDeltaPct >= 0 ? 'text-[var(--nr-success)]' : 'text-[var(--nr-warning)]'
+                }`}
+              >
+                {salesDeltaPct >= 0 ? `+${salesDeltaPct}%` : `${salesDeltaPct}%`}
+              </span>
+            )}
           </div>
-          <div className="mt-1.5 text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-            <ReceiptText className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-            <span>
+          <div className="text-[11px] text-[var(--nr-text-secondary)] flex items-center gap-1.5 pt-1 border-t border-[var(--nr-border)]">
+            <ReceiptText className="w-3.5 h-3.5 text-[var(--nr-primary)] shrink-0" />
+            <span className="truncate">
               {periodCode} · {erpState.sales.length}{' '}
-              {locale === 'es' ? 'facturas registradas' : 'recorded sales'}
+              {locale === 'es' ? 'ventas' : 'sales'} ·{' '}
+              {erpState.eInvoicing.invoices.length} e-CF
             </span>
           </div>
-        </div>
+        </ErpSurfaceCard>
 
-        <div className="rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4">
-          <div className="flex items-center justify-between gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
-            <span>{locale === 'es' ? 'Nómina del período' : 'Period Payroll'}</span>
-            <StatusBadge
-              activityStatus={payrollOverviewStatus.statusType}
-              locale={locale}
-              label={
-                locale === 'es'
-                  ? payrollOverviewStatus.labelEs
-                  : payrollOverviewStatus.labelEn
-              }
-            />
-          </div>
-          <div className="mt-2">
-            <MoneyCell
-              amount={periodPayrollCost}
-              locale={locale}
-              size="lg"
-              pendingLabel={locale === 'es' ? 'En borrador (sin corrida)' : 'Draft (no run)'}
-            />
-          </div>
-          <div className="mt-1.5 text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-            <Calculator className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-            <span>
-              {dashboardPeriod
-                ? locale === 'es'
-                  ? dashboardPeriod.nameEs
-                  : dashboardPeriod.nameEn
-                : '—'}
+        {/* 2. Estado de Caja */}
+        <ErpSurfaceCard className="flex flex-col justify-between gap-2 min-w-0">
+          <div className="flex flex-wrap items-center justify-between gap-1.5">
+            <span className="text-xs font-semibold text-[var(--nr-text-secondary)] leading-tight">
+              {locale === 'es' ? 'Estado de Caja' : 'Cashbox Status'}
             </span>
-          </div>
-        </div>
-
-        <div className="rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4">
-          <div className="flex items-center justify-between gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
-            <span>{locale === 'es' ? 'Estado de Caja' : 'Cashbox Status'}</span>
             <StatusBadge
               activityStatus={openCashSession ? 'open' : 'pending'}
               locale={locale}
@@ -315,30 +347,33 @@ export const OverviewScreen: React.FC = () => {
               }
             />
           </div>
-          <div className="mt-2">
+          <div className="min-w-0">
             {openCashSession ? (
               <MoneyCell amount={openCashSession.expectedCash} locale={locale} size="lg" />
             ) : (
-              <span className="font-display text-lg font-bold text-amber-700 dark:text-amber-300">
+              <span className="font-display text-lg font-bold text-[var(--nr-warning)]">
                 {locale === 'es' ? 'Caja cerrada' : 'Register closed'}
               </span>
             )}
           </div>
-          <div className="mt-1.5 text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-            <Landmark className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-            <span>
+          <div className="text-[11px] text-[var(--nr-text-secondary)] flex items-center gap-1.5 pt-1 border-t border-[var(--nr-border)]">
+            <Landmark className="w-3.5 h-3.5 text-[var(--nr-primary)] shrink-0" />
+            <span className="truncate">
               {openCashSession
-                ? `${locale === 'es' ? 'Turno abierto por' : 'Opened by'} ${openCashSession.cashierName}`
+                ? `${locale === 'es' ? 'Turno de' : 'Opened by'} ${openCashSession.cashierName}`
                 : locale === 'es'
                   ? 'Requiere apertura para efectivo'
                   : 'Open register for cash sales'}
             </span>
           </div>
-        </div>
+        </ErpSurfaceCard>
 
-        <div className="rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4">
-          <div className="flex items-center justify-between gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
-            <span>{locale === 'es' ? 'Alertas e Incidencias' : 'Alerts & Incidences'}</span>
+        {/* 3. Inventario y Alertas */}
+        <ErpSurfaceCard className="flex flex-col justify-between gap-2 min-w-0">
+          <div className="flex flex-wrap items-center justify-between gap-1.5">
+            <span className="text-xs font-semibold text-[var(--nr-text-secondary)] leading-tight">
+              {locale === 'es' ? 'Inventario y Alertas' : 'Inventory & Alerts'}
+            </span>
             <StatusBadge
               activityStatus={
                 incidences.some((i) => i.severity === 'HIGH')
@@ -356,48 +391,105 @@ export const OverviewScreen: React.FC = () => {
                   : incidences.length > 0
                     ? locale === 'es'
                       ? 'Revisar'
-                      : 'Pending'
+                      : 'Review'
                     : locale === 'es'
                       ? 'Al día'
-                      : 'Approved'
+                      : 'Clear'
               }
             />
           </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="font-mono-num text-xl font-bold text-slate-900 dark:text-slate-100">
-              {incidences.length}
+          <div className="flex flex-wrap items-baseline gap-2 min-w-0">
+            <span
+              data-tabular="true"
+              className="font-mono-num text-lg sm:text-xl font-bold text-[var(--nr-text)]"
+            >
+              {lowStockProducts.length}
             </span>
-            <span className="text-xs text-slate-500 dark:text-slate-400">
-              {locale === 'es' ? 'activas' : 'active'}
-            </span>
-          </div>
-          <div className="mt-1.5 text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-            <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
-            <span>
-              {lowStockProducts.length}{' '}
-              {locale === 'es' ? 'productos en stock mínimo' : 'low-stock items'} ·{' '}
-              {locale === 'es' ? 'CxP:' : 'AP:'} RD${periodPayablesBalance.toLocaleString('en-US')}
+            <span className="text-xs text-[var(--nr-text-secondary)] truncate">
+              {locale === 'es'
+                ? `en mínimo / ${activeProductsCount} activos`
+                : `low stock / ${activeProductsCount} active`}
             </span>
           </div>
-        </div>
+          <div className="text-[11px] text-[var(--nr-text-secondary)] flex items-center gap-1.5 pt-1 border-t border-[var(--nr-border)]">
+            <PackageCheck className="w-3.5 h-3.5 text-[var(--nr-warning)] shrink-0" />
+            <span className="truncate">
+              {incidences.length}{' '}
+              {locale === 'es' ? 'incidencias' : 'incidences'} ·{' '}
+              {locale === 'es' ? 'CxP:' : 'AP:'}{' '}
+              <span data-tabular="true" className="font-mono-num">
+                RD${periodPayablesBalance.toLocaleString('en-US')}
+              </span>
+            </span>
+          </div>
+        </ErpSurfaceCard>
+
+        {/* 4. Nómina del período */}
+        <ErpSurfaceCard className="flex flex-col justify-between gap-2 min-w-0">
+          <div className="flex flex-wrap items-center justify-between gap-1.5">
+            <span className="text-xs font-semibold text-[var(--nr-text-secondary)] leading-tight">
+              {locale === 'es' ? 'Nómina del período' : 'Period Payroll'}
+            </span>
+            <StatusBadge
+              activityStatus={payrollOverviewStatus.statusType}
+              locale={locale}
+              label={
+                locale === 'es'
+                  ? payrollOverviewStatus.labelEs
+                  : payrollOverviewStatus.labelEn
+              }
+            />
+          </div>
+          <div className="min-w-0 flex flex-wrap items-baseline justify-between gap-2">
+            <MoneyCell
+              amount={periodPayrollCost}
+              locale={locale}
+              size="lg"
+              pendingLabel={locale === 'es' ? 'En borrador (sin corrida)' : 'Draft (no run)'}
+            />
+            {payrollDeltaPct !== null && (
+              <span
+                data-tabular="true"
+                className="font-mono-num text-[11px] font-semibold text-[var(--nr-text-secondary)]"
+              >
+                {payrollDeltaPct >= 0 ? `+${payrollDeltaPct}%` : `${payrollDeltaPct}%`}
+              </span>
+            )}
+          </div>
+          <div className="text-[11px] text-[var(--nr-text-secondary)] flex items-center gap-1.5 pt-1 border-t border-[var(--nr-border)]">
+            <Calculator className="w-3.5 h-3.5 text-[var(--nr-primary)] shrink-0" />
+            <span className="truncate">
+              {dashboardPeriod
+                ? locale === 'es'
+                  ? dashboardPeriod.nameEs
+                  : dashboardPeriod.nameEn
+                : '—'}
+            </span>
+          </div>
+        </ErpSurfaceCard>
       </div>
 
       {/* Quick Actions */}
-      <section className="rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4">
-        <div className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">
+      <ErpSurfaceCard padding="sm">
+        <div className="text-[11px] font-bold uppercase tracking-wider text-[var(--nr-text-secondary)] mb-3">
           {locale === 'es' ? 'Accesos rápidos operativos' : 'Operational Quick Actions'}
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5">
           {[
+            {
+              id: 'pos' as const,
+              icon: MonitorSmartphone,
+              label: locale === 'es' ? 'Abrir POS' : 'Open POS',
+            },
+            {
+              id: 'e_invoicing_docs' as const,
+              icon: FileCheck2,
+              label: locale === 'es' ? 'Facturación e-CF' : 'e-CF Invoicing',
+            },
             {
               id: 'cashbox_shift' as const,
               icon: Landmark,
               label: locale === 'es' ? 'Abrir / Ver Caja' : 'Open / View Cashbox',
-            },
-            {
-              id: 'pos' as const,
-              icon: MonitorSmartphone,
-              label: locale === 'es' ? 'Nueva venta POS' : 'New POS Sale',
             },
             {
               id: 'inventory_movements' as const,
@@ -405,9 +497,9 @@ export const OverviewScreen: React.FC = () => {
               label: locale === 'es' ? 'Ajustar inventario' : 'Adjust Inventory',
             },
             {
-              id: 'payroll_review' as const,
-              icon: ClipboardCheck,
-              label: locale === 'es' ? 'Revisar nómina' : 'Review Payroll',
+              id: 'sales_ar' as const,
+              icon: ReceiptText,
+              label: locale === 'es' ? 'Ventas y CxC' : 'Sales & AR',
             },
             {
               id: 'accounting_trial_balance' as const,
@@ -415,9 +507,9 @@ export const OverviewScreen: React.FC = () => {
               label: locale === 'es' ? 'Balanza contable' : 'Trial Balance',
             },
             {
-              id: 'branches' as const,
-              icon: ArrowUpRight,
-              label: locale === 'es' ? 'Sucursales' : 'Branches',
+              id: 'payroll_review' as const,
+              icon: ClipboardCheck,
+              label: locale === 'es' ? 'Revisar nómina' : 'Review Payroll',
             },
           ].map((btn) => {
             const Icon = btn.icon;
@@ -426,46 +518,46 @@ export const OverviewScreen: React.FC = () => {
                 key={btn.id}
                 type="button"
                 onClick={() => setActiveScreen(btn.id)}
-                className="flex items-center gap-2 rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/70 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 hover:border-emerald-300 dark:hover:border-emerald-700 px-3 py-2.5 text-xs font-semibold text-slate-800 dark:text-slate-100 transition-colors text-left"
+                className="nr-focus-ring nr-transition flex items-center gap-2 rounded-xl border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] hover:bg-[var(--nr-success-bg)] hover:border-[var(--nr-success-border)] px-3 py-2.5 text-xs font-semibold text-[var(--nr-text)] text-left"
               >
-                <Icon className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <Icon className="w-4 h-4 text-[var(--nr-primary)] shrink-0" />
                 <span className="truncate">{btn.label}</span>
               </button>
             );
           })}
         </div>
-      </section>
+      </ErpSurfaceCard>
 
       {/* Chart + Incidences Split */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         {/* Interactive Monthly Bar Chart */}
-        <section className="lg:col-span-7 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4 sm:p-5 space-y-4">
+        <ErpSurfaceCard className="lg:col-span-7 space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
-              <h2 className="font-display text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100">
+              <h2 className="font-display text-[17px] sm:text-lg font-bold text-[var(--nr-text)]">
                 {locale === 'es'
                   ? 'Comparativo mensual: Ventas vs. Nómina'
                   : 'Monthly Comparison: Sales vs. Payroll'}
               </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <p className="text-xs text-[var(--nr-text-secondary)]">
                 {locale === 'es'
                   ? 'Haz clic en un mes para enfocar el panel en ese período.'
                   : 'Click a month to focus the dashboard on that period.'}
               </p>
             </div>
-            <div className="flex items-center gap-3 text-[11px] font-medium text-slate-600 dark:text-slate-300">
+            <div className="flex items-center gap-3 text-[11px] font-medium text-[var(--nr-text-secondary)]">
               <span className="inline-flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-xs bg-emerald-600" />
+                <span className="w-2.5 h-2.5 rounded-xs bg-[var(--nr-primary)]" />
                 {locale === 'es' ? 'Ventas' : 'Sales'}
               </span>
               <span className="inline-flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-xs bg-slate-700 dark:bg-slate-400" />
+                <span className="w-2.5 h-2.5 rounded-xs bg-[#132B42] dark:bg-slate-400" />
                 {locale === 'es' ? 'Nómina' : 'Payroll'}
               </span>
             </div>
           </div>
 
-          <div className="grid grid-cols-5 gap-3 items-end h-52 pt-4 border-t border-slate-100 dark:border-slate-800">
+          <div className="grid grid-cols-5 gap-2 sm:gap-3 items-end h-52 pt-4 border-t border-[var(--nr-border)]">
             {chartSeries.rows.map((bar) => {
               const salesH = Math.max(8, Math.round((bar.sales / chartSeries.maxVal) * 140));
               const payH = Math.max(8, Math.round((bar.payroll / chartSeries.maxVal) * 140));
@@ -478,66 +570,80 @@ export const OverviewScreen: React.FC = () => {
                   onClick={() => {
                     if (matchedPeriod) selectPeriod(matchedPeriod.id, false);
                   }}
-                  className={`flex flex-col items-center justify-end h-full rounded p-2 transition-colors ${
+                  className={`nr-focus-ring nr-transition flex flex-col items-center justify-end h-full rounded-xl p-2 ${
                     isSelected
-                      ? 'bg-emerald-50/70 dark:bg-emerald-950/30 ring-1 ring-emerald-400/70'
-                      : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'
+                      ? 'bg-[var(--nr-success-bg)] ring-1 ring-[var(--nr-primary)]'
+                      : 'hover:bg-[var(--nr-surface-muted)]'
                   }`}
                 >
                   <div className="flex items-end gap-1.5 h-[148px]">
                     <div
                       style={{ height: `${salesH}px` }}
-                      className="w-4 sm:w-5 rounded-t bg-emerald-600 transition-all"
+                      className="w-4 sm:w-5 rounded-t bg-[var(--nr-primary)] transition-all"
                       title={`RD$${bar.sales.toLocaleString('en-US')}`}
                     />
                     <div
                       style={{ height: `${payH}px` }}
-                      className="w-4 sm:w-5 rounded-t bg-slate-700 dark:bg-slate-400 transition-all"
+                      className="w-4 sm:w-5 rounded-t bg-[#132B42] dark:bg-slate-400 transition-all"
                       title={`RD$${bar.payroll.toLocaleString('en-US')}`}
                     />
                   </div>
-                  <div className="mt-2 text-xs font-semibold text-slate-800 dark:text-slate-200">
+                  <div className="mt-2 text-xs font-semibold text-[var(--nr-text)]">
                     {bar.label}
                   </div>
-                  <div className="font-mono-num text-[10px] text-slate-500 dark:text-slate-400">
+                  <div
+                    data-tabular="true"
+                    className="font-mono-num text-[10px] text-[var(--nr-text-secondary)]"
+                  >
                     {Math.round(bar.sales / 1000)}k
                   </div>
                 </button>
               );
             })}
           </div>
-        </section>
+        </ErpSurfaceCard>
 
         {/* Incidences Panel */}
-        <section className="lg:col-span-5 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4 sm:p-5 space-y-3">
+        <ErpSurfaceCard className="lg:col-span-5 space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="font-display text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100">
+            <h2 className="font-display text-[17px] sm:text-lg font-bold text-[var(--nr-text)]">
               {locale === 'es'
                 ? 'Incidencias y alertas activas'
                 : 'Active Incidences & Alerts'}
             </h2>
-            <span className="font-mono-num text-xs font-semibold text-slate-500 dark:text-slate-400">
+            <span
+              data-tabular="true"
+              className="font-mono-num text-xs font-semibold px-2 py-0.5 rounded-md bg-[var(--nr-surface-muted)] border border-[var(--nr-border)] text-[var(--nr-text-secondary)]"
+            >
               {incidences.length}
             </span>
           </div>
 
           {incidences.length === 0 ? (
-            <div className="rounded border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 p-4 text-xs text-slate-500 dark:text-slate-400">
-              {locale === 'es'
-                ? 'Sin incidencias pendientes para este período.'
-                : 'No pending incidences for this period.'}
-            </div>
+            <ErpStatePanel
+              variant="success"
+              title={
+                locale === 'es'
+                  ? 'Sin incidencias pendientes'
+                  : 'No pending incidences'
+              }
+              description={
+                locale === 'es'
+                  ? 'Caja, inventario y nómina no presentan observaciones activas en este período.'
+                  : 'Cashbox, inventory, and payroll have no active alerts for this period.'
+              }
+            />
           ) : (
-            <div className="space-y-2 max-h-[250px] overflow-y-auto pr-1">
+            <div className="space-y-2 max-h-[252px] overflow-y-auto pr-1">
               {incidences.map((inc) => (
                 <button
                   key={inc.id}
                   type="button"
                   onClick={() => setSelectedIncidence(inc)}
-                  className="w-full text-left rounded border border-slate-200 dark:border-slate-700 hover:border-amber-400 dark:hover:border-amber-600 bg-slate-50/70 dark:bg-slate-800/40 p-3 transition-colors space-y-1"
+                  className="nr-focus-ring nr-transition w-full text-left rounded-xl border border-[var(--nr-border)] hover:border-[var(--nr-warning-border)] bg-[var(--nr-surface-elevated)] hover:bg-[var(--nr-surface-muted)] p-3 space-y-1"
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-semibold text-slate-900 dark:text-slate-100 truncate">
+                    <span className="text-xs font-semibold text-[var(--nr-text)] truncate">
                       {locale === 'es' ? inc.titleEs : inc.titleEn}
                     </span>
                     <StatusBadge
@@ -546,52 +652,39 @@ export const OverviewScreen: React.FC = () => {
                       label={inc.module}
                     />
                   </div>
-                  <p className="text-[11px] text-slate-600 dark:text-slate-400 line-clamp-2">
+                  <p className="text-[11px] text-[var(--nr-text-secondary)] line-clamp-2">
                     {locale === 'es' ? inc.detailEs : inc.detailEn}
                   </p>
                 </button>
               ))}
             </div>
           )}
-        </section>
+        </ErpSurfaceCard>
       </div>
 
       {/* Recent Activity Feed */}
       <RecentActivityFeed />
 
-      {/* Incidence Detail Modal */}
-      {selectedIncidence && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60">
-          <div className="w-full max-w-md rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xl p-5 space-y-4">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <StatusBadge
-                  activityStatus={selectedIncidence.severity === 'HIGH' ? 'alert' : 'warning'}
-                  locale={locale}
-                  label={selectedIncidence.module}
-                />
-                <h3 className="mt-2 font-display text-base font-bold text-slate-900 dark:text-slate-100">
-                  {locale === 'es' ? selectedIncidence.titleEs : selectedIncidence.titleEn}
-                </h3>
-              </div>
+      {/* Incidence Detail Modal (Escape & backdrop accessible) */}
+      <ErpModal
+        open={Boolean(selectedIncidence)}
+        onClose={() => setSelectedIncidence(null)}
+        title={
+          selectedIncidence
+            ? locale === 'es'
+              ? selectedIncidence.titleEs
+              : selectedIncidence.titleEn
+            : ''
+        }
+        closeLabel={locale === 'es' ? 'Cerrar' : 'Close'}
+        maxWidthClass="max-w-md"
+        footer={
+          selectedIncidence ? (
+            <>
               <button
                 type="button"
                 onClick={() => setSelectedIncidence(null)}
-                className="p-1 rounded text-slate-500 hover:text-slate-900 dark:hover:text-white"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-              {locale === 'es' ? selectedIncidence.detailEs : selectedIncidence.detailEn}
-            </p>
-
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
-              <button
-                type="button"
-                onClick={() => setSelectedIncidence(null)}
-                className="h-9 px-3.5 rounded border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200"
+                className="nr-focus-ring nr-transition h-9 px-3.5 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface)] text-xs font-semibold text-[var(--nr-text)] hover:bg-[var(--nr-surface-muted)]"
               >
                 {locale === 'es' ? 'Cerrar' : 'Close'}
               </button>
@@ -604,17 +697,35 @@ export const OverviewScreen: React.FC = () => {
                   setActiveScreen(selectedIncidence.targetScreen as never);
                   setSelectedIncidence(null);
                 }}
-                className="inline-flex items-center gap-1.5 h-9 px-4 rounded bg-emerald-600 hover:bg-emerald-700 text-xs font-semibold text-white"
+                className="nr-focus-ring nr-transition inline-flex items-center gap-1.5 h-9 px-4 rounded-lg bg-[var(--nr-primary)] hover:bg-[var(--nr-primary-hover)] text-xs font-semibold text-[var(--nr-primary-fg)]"
               >
                 <span>
                   {locale === 'es' ? 'Resolver en módulo' : 'Resolve in module'}
                 </span>
                 <ArrowUpRight className="w-3.5 h-3.5" />
               </button>
+            </>
+          ) : undefined
+        }
+      >
+        {selectedIncidence && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <StatusBadge
+                activityStatus={selectedIncidence.severity === 'HIGH' ? 'alert' : 'warning'}
+                locale={locale}
+                label={selectedIncidence.module}
+              />
+              <span className="font-mono-num text-[11px] text-[var(--nr-text-secondary)]">
+                {selectedIncidence.periodCode}
+              </span>
             </div>
+            <p className="text-xs sm:text-sm text-[var(--nr-text-secondary)] leading-relaxed">
+              {locale === 'es' ? selectedIncidence.detailEs : selectedIncidence.detailEn}
+            </p>
           </div>
-        </div>
-      )}
+        )}
+      </ErpModal>
     </div>
   );
 };

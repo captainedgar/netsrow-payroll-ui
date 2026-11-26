@@ -7,7 +7,6 @@ import {
   Calculator,
   CheckCircle2,
   ChevronRight,
-  ClipboardCheck,
   Clock,
   Eye,
   Filter,
@@ -15,13 +14,18 @@ import {
   Lock,
   Play,
   RotateCcw,
-  Search,
   Send,
   ShieldCheck,
   Undo2,
   Users,
 } from 'lucide-react';
 import { DataTable, DataTableColumn } from '../components/DataTable';
+import {
+  ErpConfirmDialog,
+  ErpFilterBar,
+  ErpStatePanel,
+  ErpSurfaceCard,
+} from '../components/ErpUiPrimitives';
 import { MoneyCell } from '../components/MoneyCell';
 import { BadgeTone, StatusBadge } from '../components/StatusBadge';
 import { usePayrollWorkspace } from '../context/PayrollWorkspaceContext';
@@ -47,7 +51,6 @@ export const PayrollReviewScreen: React.FC = () => {
     canApproveCurrentRun,
     approvalDisabledReason,
     locale,
-    theme,
     t,
     permissions,
     isLoading,
@@ -63,6 +66,7 @@ export const PayrollReviewScreen: React.FC = () => {
 
   const [breakdownSearch, setBreakdownSearch] = useState('');
   const [onlyIncidences, setOnlyIncidences] = useState(false);
+  const [confirmApproveOpen, setConfirmApproveOpen] = useState(false);
 
   const incidencesCount = useMemo(() => {
     if (!activeRun) return 0;
@@ -411,18 +415,12 @@ export const PayrollReviewScreen: React.FC = () => {
 
   if (!activePeriod && !isLoading) {
     return (
-      <div className="rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-8 text-center space-y-3">
-        <p className="text-sm text-slate-600 dark:text-slate-300">
-          {t.topBar.noPeriodSelected}
-        </p>
-        <button
-          type="button"
-          onClick={() => setActiveScreen('periods')}
-          className="h-9 px-4 rounded bg-emerald-600 hover:bg-emerald-700 text-xs font-semibold text-white"
-        >
-          {t.common.backToPeriods}
-        </button>
-      </div>
+      <ErpStatePanel
+        variant="empty"
+        title={t.topBar.noPeriodSelected}
+        actionLabel={t.common.backToPeriods}
+        onAction={() => setActiveScreen('periods')}
+      />
     );
   }
 
@@ -443,40 +441,40 @@ export const PayrollReviewScreen: React.FC = () => {
 
   return (
     <div className="space-y-5">
-      {/* Stitch Breadcrumb */}
+      {/* Breadcrumb */}
       <nav
         aria-label="Breadcrumb"
-        className="flex flex-wrap items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400"
+        className="flex flex-wrap items-center gap-1.5 text-xs text-[var(--nr-text-secondary)]"
       >
         <span>{t.reviewScreen.breadcrumbModule}</span>
-        <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+        <ChevronRight className="w-3.5 h-3.5 opacity-60" />
         <button
           type="button"
           onClick={() => setActiveScreen('periods')}
-          className="hover:text-emerald-700 dark:hover:text-emerald-400 font-medium transition-colors"
+          className="nr-focus-ring nr-transition hover:text-[var(--nr-primary)] font-medium rounded"
         >
           {t.reviewScreen.breadcrumbPeriods}
         </button>
-        <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-        <span className="font-medium text-slate-700 dark:text-slate-300">
+        <ChevronRight className="w-3.5 h-3.5 opacity-60" />
+        <span className="font-medium text-[var(--nr-text)]">
           {t.reviewScreen.breadcrumbReview}
         </span>
         {activePeriod && (
           <>
-            <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-            <span className="font-semibold text-slate-900 dark:text-slate-100">
+            <ChevronRight className="w-3.5 h-3.5 opacity-60" />
+            <span className="font-semibold text-[var(--nr-text)]">
               {periodName} · {t.reviewScreen.monthlyPeriodTag}
             </span>
           </>
         )}
       </nav>
 
-      {/* Header + Status Badges + Stitch Action Toolbar */}
+      {/* Header + Status Badges + Action Toolbar */}
       <div className="space-y-3">
         <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3">
           <div>
             <div className="flex flex-wrap items-center gap-2.5">
-              <h1 className="font-display text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100">
+              <h1 className="font-display text-[26px] sm:text-[30px] font-bold tracking-tight leading-tight text-[var(--nr-text)]">
                 {t.reviewScreen.titlePrefix} / {periodName}
               </h1>
               {activePeriod && (
@@ -526,7 +524,7 @@ export const PayrollReviewScreen: React.FC = () => {
               )}
             </div>
             {activePeriod && (
-              <p className="mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+              <p className="mt-1 text-xs sm:text-sm text-[var(--nr-text-secondary)]">
                 {periodName} · {t.reviewScreen.monthlyPeriodTag} (
                 <span className="font-mono-num">
                   {formatDateLocalized(activePeriod.startDate, locale)} –{' '}
@@ -538,14 +536,14 @@ export const PayrollReviewScreen: React.FC = () => {
           </div>
         </div>
 
-        {/* Action Toolbar matching Stitch */}
+        {/* Action Toolbar */}
         {activePeriod && (
-          <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2.5">
-            <div className="inline-flex items-center gap-2 rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-slate-300">
-              <span className="w-2 h-2 rounded-full bg-emerald-500" />
-              <span>
-                {locale.toUpperCase()} ·{' '}
-                {theme === 'light' ? t.topBar.themeLight : t.topBar.themeDark}
+          <ErpSurfaceCard padding="sm" className="flex flex-wrap items-center justify-between gap-2">
+            <div className="inline-flex items-center gap-2 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-2.5 py-1 text-xs font-medium text-[var(--nr-text-secondary)]">
+              <span className="font-mono-num">
+                {activeRun
+                  ? `${t.reviewScreen.runLabel} #${activeRun.runNumber} · ${t.runPhases[activeRun.phase]}`
+                  : t.statuses[activePeriod.status]}
               </span>
             </div>
 
@@ -555,7 +553,7 @@ export const PayrollReviewScreen: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setActiveScreen('novelties')}
-                    className="inline-flex items-center gap-1.5 h-9 px-3 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200 transition-colors whitespace-nowrap"
+                    className="nr-focus-ring nr-transition inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface)] hover:bg-[var(--nr-surface-muted)] text-xs font-semibold text-[var(--nr-text)] whitespace-nowrap"
                   >
                     <span>{t.periodsScreen.viewNovelties}</span>
                     <ArrowUpRight className="w-3.5 h-3.5" />
@@ -564,7 +562,7 @@ export const PayrollReviewScreen: React.FC = () => {
                     type="button"
                     disabled={isMutating || !permissions.canSubmitForReview}
                     onClick={() => submitPeriodForReview(activePeriod.id)}
-                    className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-semibold text-white transition-colors whitespace-nowrap"
+                    className="nr-focus-ring nr-transition inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg bg-[var(--nr-primary)] hover:bg-[var(--nr-primary-hover)] disabled:opacity-50 disabled:cursor-not-allowed text-xs font-semibold text-[var(--nr-primary-fg)] whitespace-nowrap"
                   >
                     <Send className="w-3.5 h-3.5" />
                     <span>{t.reviewScreen.ctaSendToReview}</span>
@@ -578,7 +576,7 @@ export const PayrollReviewScreen: React.FC = () => {
                     type="button"
                     disabled={isMutating || !permissions.canEditNovelties}
                     onClick={() => returnPeriodToDraft(activePeriod.id)}
-                    className="inline-flex items-center gap-1.5 h-9 px-3 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-semibold text-slate-700 dark:text-slate-200 transition-colors whitespace-nowrap"
+                    className="nr-focus-ring nr-transition inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface)] hover:bg-[var(--nr-surface-muted)] disabled:opacity-50 disabled:cursor-not-allowed text-xs font-semibold text-[var(--nr-text)] whitespace-nowrap"
                   >
                     <Undo2 className="w-3.5 h-3.5" />
                     <span>{t.reviewScreen.ctaReturnToDraft}</span>
@@ -588,9 +586,17 @@ export const PayrollReviewScreen: React.FC = () => {
                     type="button"
                     disabled={isMutating || !permissions.canRunSimulation}
                     onClick={() => runSimulation(activePeriod.id)}
-                    className="inline-flex items-center gap-1.5 h-9 px-3 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-semibold text-slate-800 dark:text-slate-100 transition-colors whitespace-nowrap"
+                    className={`nr-focus-ring nr-transition inline-flex items-center gap-1.5 h-9 px-3 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed text-xs font-semibold whitespace-nowrap ${
+                      !activeRun
+                        ? 'bg-[var(--nr-primary)] hover:bg-[var(--nr-primary-hover)] text-[var(--nr-primary-fg)]'
+                        : 'border border-[var(--nr-border)] bg-[var(--nr-surface)] hover:bg-[var(--nr-surface-muted)] text-[var(--nr-text)]'
+                    }`}
                   >
-                    <Play className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                    <Play
+                      className={`w-3.5 h-3.5 ${
+                        !activeRun ? '' : 'text-[var(--nr-primary)]'
+                      }`}
+                    />
                     <span>
                       {actionType === 'simulate'
                         ? t.reviewScreen.simulating
@@ -606,10 +612,10 @@ export const PayrollReviewScreen: React.FC = () => {
                       !activeRun
                     }
                     onClick={() => runStatutoryCalculation(activePeriod.id)}
-                    className={`inline-flex items-center gap-1.5 h-9 px-3.5 rounded text-xs font-semibold transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed ${
+                    className={`nr-focus-ring nr-transition inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg text-xs font-semibold whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed ${
                       activeRun?.phase === 'SIMULATED'
-                        ? 'bg-[#059669] hover:bg-emerald-700 text-white'
-                        : 'border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-100'
+                        ? 'bg-[var(--nr-primary)] hover:bg-[var(--nr-primary-hover)] text-[var(--nr-primary-fg)]'
+                        : 'border border-[var(--nr-border)] bg-[var(--nr-surface)] hover:bg-[var(--nr-surface-muted)] text-[var(--nr-text)]'
                     }`}
                   >
                     <Calculator className="w-3.5 h-3.5" />
@@ -627,10 +633,14 @@ export const PayrollReviewScreen: React.FC = () => {
                     title={approvalDisabledReason ?? undefined}
                     onClick={() => {
                       if (activeRun && canApproveCurrentRun) {
-                        approvePayrollRun(activePeriod.id, activeRun.id);
+                        setConfirmApproveOpen(true);
                       }
                     }}
-                    className="inline-flex items-center gap-1.5 h-9 px-4 rounded bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-200 dark:disabled:bg-slate-800 disabled:text-slate-500 dark:disabled:text-slate-400 disabled:cursor-not-allowed text-xs font-semibold text-white transition-colors whitespace-nowrap"
+                    className={`nr-focus-ring nr-transition inline-flex items-center gap-1.5 h-9 px-4 rounded-lg text-xs font-semibold whitespace-nowrap disabled:cursor-not-allowed ${
+                      canApproveCurrentRun
+                        ? 'bg-[var(--nr-primary)] hover:bg-[var(--nr-primary-hover)] text-[var(--nr-primary-fg)]'
+                        : 'border border-[var(--nr-border)] bg-[var(--nr-surface-muted)] text-[var(--nr-text-secondary)] opacity-60'
+                    }`}
                   >
                     <CheckCircle2 className="w-3.5 h-3.5" />
                     <span>
@@ -642,13 +652,13 @@ export const PayrollReviewScreen: React.FC = () => {
                 </>
               )}
             </div>
-          </div>
+          </ErpSurfaceCard>
         )}
       </div>
 
       {/* 5-Step Workflow Progress Strip */}
-      <div className="rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3">
-        <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+      <ErpSurfaceCard padding="sm">
+        <div className="text-[11px] font-semibold uppercase tracking-wider text-[var(--nr-text-secondary)] mb-2">
           {t.reviewScreen.workflowStepperTitle}
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
@@ -658,12 +668,12 @@ export const PayrollReviewScreen: React.FC = () => {
             return (
               <div
                 key={stepLabel}
-                className={`rounded border px-2.5 py-2 text-xs font-semibold flex items-center gap-1.5 ${
+                className={`rounded-lg border px-2.5 py-2 text-xs font-semibold flex items-center gap-1.5 ${
                   completed
-                    ? 'bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-950/40 dark:border-emerald-800/70 dark:text-emerald-300'
+                    ? 'bg-[var(--nr-success-bg)] border-[var(--nr-success-border)] text-[var(--nr-success)]'
                     : current
-                      ? 'bg-slate-900 border-slate-900 text-white dark:bg-emerald-600 dark:border-emerald-500'
-                      : 'bg-slate-50 border-slate-200 text-slate-500 dark:bg-slate-800/50 dark:border-slate-700 dark:text-slate-400'
+                      ? 'bg-[var(--nr-navy-900)] border-[var(--nr-navy-900)] text-white'
+                      : 'bg-[var(--nr-surface-elevated)] border-[var(--nr-border)] text-[var(--nr-text-secondary)]'
                 }`}
               >
                 {completed ? (
@@ -676,7 +686,7 @@ export const PayrollReviewScreen: React.FC = () => {
             );
           })}
         </div>
-      </div>
+      </ErpSurfaceCard>
 
       {/* Contextual State Banners */}
       {activePeriod?.status === 'APPROVED' && !isViewingHistoricalRun && (
@@ -919,25 +929,25 @@ export const PayrollReviewScreen: React.FC = () => {
         </div>
       </div>
 
-      {/* Inline Compact HISTORIAL DE CORRIDAS Card matching Stitch screenshot */}
+      {/* Inline Compact HISTORIAL DE CORRIDAS Card */}
       {activePeriod && (
-        <div className="rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3.5 space-y-2">
+        <ErpSurfaceCard padding="sm" className="space-y-2">
           <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-200">
-              <History className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[var(--nr-text)]">
+              <History className="w-3.5 h-3.5 text-[var(--nr-text-secondary)]" />
               <span>{t.reviewScreen.historyTitle}</span>
             </div>
-            <span className="font-mono-num text-[11px] text-slate-500 dark:text-slate-400">
+            <span className="font-mono-num text-[11px] text-[var(--nr-text-secondary)]">
               {activePeriod.runs.length}
             </span>
           </div>
 
           {activePeriod.runs.length === 0 ? (
-            <div className="text-xs text-slate-500 dark:text-slate-400 py-1">
+            <div className="text-xs text-[var(--nr-text-secondary)] py-1">
               {t.reviewScreen.historyEmpty}
             </div>
           ) : (
-            <div className="divide-y divide-slate-100 dark:divide-slate-800">
+            <div className="divide-y divide-[var(--nr-border)]">
               {activePeriod.runs.map((run) => {
                 const isSelected = activeRun?.id === run.id;
                 return (
@@ -945,27 +955,20 @@ export const PayrollReviewScreen: React.FC = () => {
                     key={run.id}
                     type="button"
                     onClick={() => selectRun(run.id)}
-                    className={`w-full flex flex-wrap items-center justify-between gap-2 py-2 px-2 rounded text-left transition-colors ${
+                    className={`nr-focus-ring nr-transition w-full flex flex-wrap items-center justify-between gap-2 py-2 px-2.5 rounded-lg text-left ${
                       isSelected
-                        ? 'bg-emerald-50/70 dark:bg-emerald-950/35'
-                        : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'
+                        ? 'bg-[var(--nr-success-bg)]'
+                        : 'hover:bg-[var(--nr-surface-muted)]'
                     }`}
                   >
                     <div className="flex flex-wrap items-center gap-2 text-xs">
-                      <span
-                        className={`w-2 h-2 rounded-full shrink-0 ${
-                          run.isCurrent
-                            ? 'bg-emerald-500'
-                            : 'bg-slate-400 dark:bg-slate-600'
-                        }`}
-                      />
-                      <span className="font-mono-num font-bold text-slate-900 dark:text-slate-100">
+                      <span className="font-mono-num font-bold text-[var(--nr-text)]">
                         {t.reviewScreen.runLabel} #{run.runNumber}
                       </span>
-                      <span className="font-mono-num text-[11px] text-slate-500 dark:text-slate-400">
+                      <span className="font-mono-num text-[11px] text-[var(--nr-text-secondary)]">
                         {run.executedAt}
                       </span>
-                      <span className="text-[11px] font-medium text-slate-600 dark:text-slate-300">
+                      <span className="text-[11px] font-medium text-[var(--nr-text-secondary)]">
                         · {t.runPhases[run.phase]}
                       </span>
                       <StatusBadge
@@ -979,7 +982,7 @@ export const PayrollReviewScreen: React.FC = () => {
                     </div>
                     <div className="flex items-center gap-2">
                       {renderConditionBadge(run)}
-                      <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
+                      <span className="text-[11px] font-semibold text-[var(--nr-primary)]">
                         {isSelected
                           ? t.reviewScreen.currentlyViewing
                           : t.reviewScreen.inspectRun}
@@ -990,11 +993,11 @@ export const PayrollReviewScreen: React.FC = () => {
               })}
             </div>
           )}
-        </div>
+        </ErpSurfaceCard>
       )}
 
       {/* Section Filter Tabs */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--nr-border)]">
         <div className="flex flex-wrap items-center gap-1">
           {(
             [
@@ -1011,10 +1014,10 @@ export const PayrollReviewScreen: React.FC = () => {
                 key={tabItem.id}
                 type="button"
                 onClick={() => setActiveReviewTab(tabItem.id)}
-                className={`px-3.5 py-2.5 text-xs font-semibold border-b-2 transition-colors whitespace-nowrap ${
+                className={`nr-focus-ring nr-transition px-3.5 py-2.5 text-xs font-semibold border-b-2 whitespace-nowrap ${
                   active
-                    ? 'border-emerald-600 text-emerald-700 dark:border-emerald-400 dark:text-emerald-300'
-                    : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                    ? 'border-[var(--nr-primary)] text-[var(--nr-primary)]'
+                    : 'border-transparent text-[var(--nr-text-secondary)] hover:text-[var(--nr-text)]'
                 }`}
               >
                 {tabItem.label}
@@ -1025,7 +1028,7 @@ export const PayrollReviewScreen: React.FC = () => {
 
         {activeRun && (
           <div className="pb-2 flex items-center gap-2">
-            <span className="font-mono-num text-xs text-slate-500 dark:text-slate-400">
+            <span className="font-mono-num text-xs text-[var(--nr-text-secondary)]">
               {t.reviewScreen.runLabel} #{activeRun.runNumber}
             </span>
             {renderConditionBadge(activeRun)}
@@ -1035,15 +1038,11 @@ export const PayrollReviewScreen: React.FC = () => {
 
       {/* Empty State when no run exists yet */}
       {!activeRun && (
-        <div className="rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-8 text-center space-y-3">
-          <ClipboardCheck className="w-8 h-8 mx-auto text-slate-400" />
-          <div className="font-display text-base font-semibold text-slate-900 dark:text-slate-100">
-            {t.reviewScreen.noRunYetTitle}
-          </div>
-          <p className="text-xs text-slate-600 dark:text-slate-400 max-w-md mx-auto">
-            {t.reviewScreen.noRunYetDesc}
-          </p>
-        </div>
+        <ErpStatePanel
+          variant="empty"
+          title={t.reviewScreen.noRunYetTitle}
+          description={t.reviewScreen.noRunYetDesc}
+        />
       )}
 
       {/* SECTION 1: Simulación */}
@@ -1214,38 +1213,37 @@ export const PayrollReviewScreen: React.FC = () => {
       {activeRun && showBreakdownSection && (
         <section className="space-y-3">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <h2 className="font-display text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100">
+            <h2 className="font-display text-sm sm:text-base font-bold text-[var(--nr-text)]">
               {t.reviewScreen.breakdownSectionTitle}
             </h2>
-
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="relative flex-1 sm:w-64">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                <input
-                  type="search"
-                  value={breakdownSearch}
-                  onChange={(e) => setBreakdownSearch(e.target.value)}
-                  placeholder={t.reviewScreen.breakdownSearchPlaceholder}
-                  className="w-full h-9 pl-9 pr-3 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500"
-                />
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setOnlyIncidences((prev) => !prev)}
-                className={`inline-flex items-center gap-1.5 h-9 px-3 rounded border text-xs font-semibold transition-colors whitespace-nowrap ${
-                  onlyIncidences
-                    ? 'bg-amber-100 border-amber-400 text-amber-950 dark:bg-amber-900/60 dark:border-amber-600 dark:text-amber-100'
-                    : 'bg-amber-50/80 border-amber-200 text-amber-900 hover:bg-amber-100 dark:bg-amber-950/30 dark:border-amber-800/70 dark:text-amber-200'
-                }`}
-              >
-                <Filter className="w-3.5 h-3.5 shrink-0" />
-                <span>
-                  {t.reviewScreen.showOnlyIncidences} ({incidencesCount})
-                </span>
-              </button>
-            </div>
           </div>
+
+          <ErpFilterBar
+            searchValue={breakdownSearch}
+            onSearchChange={setBreakdownSearch}
+            searchPlaceholder={t.reviewScreen.breakdownSearchPlaceholder}
+            hasActiveFilters={Boolean(breakdownSearch.trim()) || onlyIncidences}
+            onClearFilters={() => {
+              setBreakdownSearch('');
+              setOnlyIncidences(false);
+            }}
+            clearLabel={locale === 'es' ? 'Limpiar' : 'Clear'}
+          >
+            <button
+              type="button"
+              onClick={() => setOnlyIncidences((prev) => !prev)}
+              className={`nr-focus-ring nr-transition inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border text-xs font-semibold whitespace-nowrap ${
+                onlyIncidences
+                  ? 'bg-[var(--nr-warning-bg)] border-[var(--nr-warning-border)] text-[var(--nr-warning)]'
+                  : 'bg-[var(--nr-surface-elevated)] border-[var(--nr-border)] text-[var(--nr-text)] hover:border-[var(--nr-warning-border)]'
+              }`}
+            >
+              <Filter className="w-3.5 h-3.5 shrink-0" />
+              <span>
+                {t.reviewScreen.showOnlyIncidences} ({incidencesCount})
+              </span>
+            </button>
+          </ErpFilterBar>
 
           <DataTable
             columns={breakdownColumns}
@@ -1441,29 +1439,49 @@ export const PayrollReviewScreen: React.FC = () => {
       )}
 
       {/* SECTION 5: Deferred Phase-2 Operations Notice */}
-      <div className="rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 p-4">
+      <ErpSurfaceCard padding="sm" elevated>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
-            <div className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+            <div className="text-xs font-semibold text-[var(--nr-text)]">
               {t.reviewScreen.deferredOpsTitle}
             </div>
-            <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+            <p className="mt-0.5 text-xs text-[var(--nr-text-secondary)]">
               {t.reviewScreen.deferredOpsDesc}
             </p>
           </div>
-          <div className="flex flex-wrap items-center gap-2 text-[11px] font-medium text-slate-500 dark:text-slate-400">
-            <span className="px-2 py-1 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+          <div className="flex flex-wrap items-center gap-2 text-[11px] font-medium text-[var(--nr-text-secondary)]">
+            <span className="px-2 py-1 rounded-md border border-[var(--nr-border)] bg-[var(--nr-surface)]">
               {t.reviewScreen.deferredPayment}
             </span>
-            <span className="px-2 py-1 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+            <span className="px-2 py-1 rounded-md border border-[var(--nr-border)] bg-[var(--nr-surface)]">
               {t.reviewScreen.deferredExports}
             </span>
-            <span className="px-2 py-1 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+            <span className="px-2 py-1 rounded-md border border-[var(--nr-border)] bg-[var(--nr-surface)]">
               {t.reviewScreen.deferredAccounting}
             </span>
           </div>
         </div>
-      </div>
+      </ErpSurfaceCard>
+
+      {activePeriod && activeRun && (
+        <ErpConfirmDialog
+          open={confirmApproveOpen}
+          onClose={() => setConfirmApproveOpen(false)}
+          onConfirm={async () => {
+            await approvePayrollRun(activePeriod.id, activeRun.id);
+            setConfirmApproveOpen(false);
+          }}
+          title={t.reviewScreen.ctaApprovePayroll}
+          description={
+            locale === 'es'
+              ? `Se aprobará definitivamente la Corrida #${activeRun.runNumber} de ${periodName} con ${activeRun.employeeCount} colaboradores. El período pasará a estado Aprobado.`
+              : `Run #${activeRun.runNumber} for ${periodName} (${activeRun.employeeCount} employees) will be permanently approved and locked.`
+          }
+          confirmLabel={t.reviewScreen.ctaApprovePayroll}
+          cancelLabel={t.common.cancel}
+          isConfirming={isMutating && actionType === 'approve'}
+        />
+      )}
     </div>
   );
 };

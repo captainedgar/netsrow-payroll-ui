@@ -1,3 +1,4 @@
+import { createSeedEInvoicingState } from '../data/eInvoicingSeed';
 import { createSeedErpState } from '../data/erpSeed';
 import {
   buildRunObject,
@@ -65,6 +66,11 @@ function loadFromStorage(): PersistedWorkspace | null {
       parsed.erpState &&
       Array.isArray(parsed.erpState.products)
     ) {
+      if (!parsed.erpState.eInvoicing) {
+        parsed.erpState.eInvoicing = createSeedEInvoicingState(
+          parsed.erpState.company
+        );
+      }
       return parsed as PersistedWorkspace;
     }
     return null;

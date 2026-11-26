@@ -23,6 +23,12 @@ export interface Translations {
     overview: string;
     pos: string;
     salesAr: string;
+    eInvoicing: string;
+    eInvoicingDocs: string;
+    eInvoicingIssue: string;
+    eInvoicingLookup: string;
+    eInvoicingSequences: string;
+    eInvoicingConfig: string;
     customers: string;
     cashbox: string;
     cashboxShift: string;
@@ -363,6 +369,12 @@ export const TRANSLATIONS: Record<Locale, Translations> = {
       overview: 'Inicio',
       pos: 'POS',
       salesAr: 'Ventas',
+      eInvoicing: 'Facturación e-CF',
+      eInvoicingDocs: 'Comprobantes e-CF',
+      eInvoicingIssue: 'Emitir e-CF / Notas',
+      eInvoicingLookup: 'Consulta DGII / QR',
+      eInvoicingSequences: 'Secuencias e-NCF',
+      eInvoicingConfig: 'Certificado y DGII',
       customers: 'Clientes',
       cashbox: 'Caja',
       cashboxShift: 'Turno y apertura',
@@ -813,6 +825,12 @@ export const TRANSLATIONS: Record<Locale, Translations> = {
       overview: 'Home',
       pos: 'POS',
       salesAr: 'Sales',
+      eInvoicing: 'e-CF Invoicing',
+      eInvoicingDocs: 'e-CF Documents',
+      eInvoicingIssue: 'Issue e-CF / Notes',
+      eInvoicingLookup: 'DGII / QR Lookup',
+      eInvoicingSequences: 'e-NCF Sequences',
+      eInvoicingConfig: 'Certificate & DGII',
       customers: 'Customers',
       cashbox: 'Cashbox',
       cashboxShift: 'Shift & Opening',

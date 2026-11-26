@@ -5,11 +5,14 @@ import {
   Info,
   Lock,
   Plus,
-  Search,
   Trash2,
-  X,
 } from 'lucide-react';
 import { DataTable, DataTableColumn } from '../components/DataTable';
+import {
+  ErpFilterBar,
+  ErpModal,
+  ErpPageHeader,
+} from '../components/ErpUiPrimitives';
 import { MoneyCell } from '../components/MoneyCell';
 import { StatusBadge } from '../components/StatusBadge';
 import { SummaryCardGrid, SummaryCardItem } from '../components/SummaryCardGrid';
@@ -210,10 +213,10 @@ export const NoveltiesScreen: React.FC = () => {
         const emp = employeeMap.get(nov.employeeId);
         return (
           <div>
-            <div className="font-semibold text-slate-900 dark:text-slate-100">
+            <div className="font-semibold text-[var(--nr-text)]">
               {emp?.fullName ?? nov.employeeId}
             </div>
-            <div className="font-mono-num text-[11px] text-slate-500 dark:text-slate-400">
+            <div className="font-mono-num text-[11px] text-[var(--nr-text-secondary)]">
               {emp?.code ?? '—'}
             </div>
           </div>
@@ -225,7 +228,7 @@ export const NoveltiesScreen: React.FC = () => {
       header: t.common.date,
       minWidthClass: 'min-w-[120px]',
       render: (nov) => (
-        <span className="font-mono-num text-xs text-slate-700 dark:text-slate-300 whitespace-nowrap">
+        <span className="font-mono-num text-xs text-[var(--nr-text-secondary)] whitespace-nowrap">
           {formatDateLocalized(nov.date, locale)}
         </span>
       ),
@@ -236,10 +239,10 @@ export const NoveltiesScreen: React.FC = () => {
       minWidthClass: 'min-w-[180px]',
       render: (nov) => (
         <div>
-          <div className="font-medium text-slate-900 dark:text-slate-100">
+          <div className="font-medium text-[var(--nr-text)]">
             {t.noveltyConcepts[nov.conceptCode]}
           </div>
-          <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-[240px]">
+          <div className="text-[11px] text-[var(--nr-text-secondary)] truncate max-w-[240px]">
             {locale === 'es' ? nov.noteEs : nov.noteEn}
           </div>
         </div>
@@ -283,7 +286,7 @@ export const NoveltiesScreen: React.FC = () => {
                     e.stopPropagation();
                     openEditModal(nov);
                   }}
-                  className="p-1.5 rounded border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  className="nr-focus-ring nr-transition p-1.5 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface)] text-[var(--nr-text-secondary)] hover:text-[var(--nr-text)] hover:border-[var(--nr-primary)]"
                   title={t.common.edit}
                   aria-label={t.common.edit}
                 >
@@ -296,7 +299,7 @@ export const NoveltiesScreen: React.FC = () => {
                     e.stopPropagation();
                     handleDelete(nov);
                   }}
-                  className="p-1.5 rounded border border-red-200 dark:border-red-900/60 text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40"
+                  className="nr-focus-ring nr-transition p-1.5 rounded-lg border border-[var(--nr-error-border)] bg-[var(--nr-error-bg)] text-[var(--nr-error)] hover:opacity-90"
                   title={t.common.delete}
                   aria-label={t.common.delete}
                 >
@@ -309,67 +312,63 @@ export const NoveltiesScreen: React.FC = () => {
       : []),
   ];
 
+  const activeFilterCount =
+    (filterText.trim().length > 0 ? 1 : 0) + (categoryFilter !== 'ALL' ? 1 : 0);
+
   return (
     <div className="space-y-5">
-      {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-3">
-        <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <h1 className="font-display text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100">
-              {t.noveltiesScreen.title}
-            </h1>
-            {activePeriod && (
-              <StatusBadge
-                label={`${locale === 'es' ? activePeriod.nameEs : activePeriod.nameEn} · ${
-                  t.statuses[activePeriod.status]
-                }`}
-                tone={
-                  activePeriod.status === 'APPROVED'
-                    ? 'emerald'
-                    : activePeriod.status === 'IN_REVIEW'
-                      ? 'amber'
-                      : 'neutral'
-                }
-                icon={
-                  activePeriod.status === 'APPROVED'
-                    ? 'approved'
-                    : activePeriod.status === 'IN_REVIEW'
-                      ? 'review'
-                      : 'draft'
-                }
-              />
-            )}
-          </div>
-          <p className="mt-1 text-sm text-slate-600 dark:text-slate-400 max-w-2xl">
-            {t.noveltiesScreen.subtitle}
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2 shrink-0">
-          <button
-            type="button"
-            onClick={() => setActiveScreen('payroll_review')}
-            className="inline-flex items-center gap-1.5 h-9 px-3 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 whitespace-nowrap"
-          >
-            <span>{t.noveltiesScreen.goToReviewCta}</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </button>
-          {canEdit && (
+      <ErpPageHeader
+        title={t.noveltiesScreen.title}
+        subtitle={t.noveltiesScreen.subtitle}
+        badge={
+          activePeriod ? (
+            <StatusBadge
+              label={`${locale === 'es' ? activePeriod.nameEs : activePeriod.nameEn} · ${
+                t.statuses[activePeriod.status]
+              }`}
+              tone={
+                activePeriod.status === 'APPROVED'
+                  ? 'emerald'
+                  : activePeriod.status === 'IN_REVIEW'
+                    ? 'amber'
+                    : 'neutral'
+              }
+              icon={
+                activePeriod.status === 'APPROVED'
+                  ? 'approved'
+                  : activePeriod.status === 'IN_REVIEW'
+                    ? 'review'
+                    : 'draft'
+              }
+            />
+          ) : undefined
+        }
+        actions={
+          <>
             <button
               type="button"
-              onClick={openCreateModal}
-              className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded bg-emerald-600 hover:bg-emerald-700 text-xs font-semibold text-white transition-colors whitespace-nowrap"
+              onClick={() => setActiveScreen('payroll_review')}
+              className="nr-focus-ring nr-transition inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface)] text-xs font-semibold text-[var(--nr-text)] hover:border-[var(--nr-primary)] hover:bg-[var(--nr-surface-muted)] whitespace-nowrap"
             >
-              <Plus className="w-4 h-4" />
-              <span>{t.noveltiesScreen.addNovelty}</span>
+              <span>{t.noveltiesScreen.goToReviewCta}</span>
+              <ArrowRight className="w-3.5 h-3.5" />
             </button>
-          )}
-        </div>
-      </div>
+            {canEdit && (
+              <button
+                type="button"
+                onClick={openCreateModal}
+                className="nr-focus-ring nr-transition inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg bg-[var(--nr-primary)] hover:bg-[var(--nr-primary-hover)] text-xs font-semibold text-[var(--nr-primary-fg)] whitespace-nowrap"
+              >
+                <Plus className="w-4 h-4" />
+                <span>{t.noveltiesScreen.addNovelty}</span>
+              </button>
+            )}
+          </>
+        }
+      />
 
-      {/* Inline Monthly Period Switcher Chips */}
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+        <span className="text-xs font-semibold text-[var(--nr-text-secondary)]">
           {t.noveltiesScreen.periodSelectorLabel}:
         </span>
         {periods.map((p) => {
@@ -379,10 +378,10 @@ export const NoveltiesScreen: React.FC = () => {
               key={p.id}
               type="button"
               onClick={() => selectPeriod(p.id, false)}
-              className={`px-3 py-1.5 rounded border text-xs font-semibold transition-colors whitespace-nowrap ${
+              className={`nr-focus-ring nr-transition px-3 py-1.5 rounded-lg border text-xs font-semibold whitespace-nowrap ${
                 selected
-                  ? 'bg-slate-900 text-white border-slate-900 dark:bg-emerald-600 dark:border-emerald-500'
-                  : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'
+                  ? 'bg-[var(--nr-primary)] text-[var(--nr-primary-fg)] border-[var(--nr-primary)]'
+                  : 'bg-[var(--nr-surface)] text-[var(--nr-text)] border-[var(--nr-border)] hover:border-[var(--nr-primary)]'
               }`}
             >
               {locale === 'es' ? p.nameEs : p.nameEn} · {t.statuses[p.status]}
@@ -391,15 +390,14 @@ export const NoveltiesScreen: React.FC = () => {
         })}
       </div>
 
-      {/* Period editability / lock banner */}
       {activePeriod && (
         <div
-          className={`flex items-start gap-2.5 rounded-md border p-3 text-xs ${
+          className={`flex items-start gap-2.5 rounded-xl border p-3.5 text-xs ${
             activePeriod.status === 'DRAFT'
-              ? 'bg-emerald-50/70 border-emerald-200 text-emerald-900 dark:bg-emerald-950/30 dark:border-emerald-800/70 dark:text-emerald-200'
+              ? 'bg-[var(--nr-success-bg)] border-[var(--nr-success-border)] text-[var(--nr-success)]'
               : activePeriod.status === 'IN_REVIEW'
-                ? 'bg-amber-50/80 border-amber-200 text-amber-900 dark:bg-amber-950/30 dark:border-amber-800/70 dark:text-amber-200'
-                : 'bg-slate-100 border-slate-300 text-slate-800 dark:bg-slate-800/70 dark:border-slate-700 dark:text-slate-200'
+                ? 'bg-[var(--nr-warning-bg)] border-[var(--nr-warning-border)] text-[var(--nr-warning)]'
+                : 'bg-[var(--nr-surface-muted)] border-[var(--nr-border)] text-[var(--nr-text)]'
           }`}
         >
           {activePeriod.status === 'DRAFT' ? (
@@ -419,36 +417,35 @@ export const NoveltiesScreen: React.FC = () => {
 
       <SummaryCardGrid items={summaryItems} locale={locale} columns={3} />
 
-      {/* Search & category filter */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="relative flex-1 max-w-md">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-          <input
-            type="search"
-            value={filterText}
-            onChange={(e) => setFilterText(e.target.value)}
-            placeholder={t.noveltiesScreen.filterEmployeeOrConcept}
-            className="w-full h-9 pl-9 pr-3 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500"
-          />
-        </div>
-
-        <div className="inline-flex items-center gap-1 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 p-1">
+      <ErpFilterBar
+        searchValue={filterText}
+        onSearchChange={setFilterText}
+        searchPlaceholder={t.noveltiesScreen.filterEmployeeOrConcept}
+        hasActiveFilters={activeFilterCount > 0}
+        onClearFilters={() => {
+          setFilterText('');
+          setCategoryFilter('ALL');
+        }}
+        clearLabel={locale === 'es' ? 'Limpiar filtros' : 'Clear filters'}
+        activeFilterCount={activeFilterCount}
+      >
+        <div className="inline-flex items-center gap-1 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-muted)] p-1">
           {(['ALL', 'EARNING', 'DEDUCTION'] as const).map((cat) => (
             <button
               key={cat}
               type="button"
               onClick={() => setCategoryFilter(cat)}
-              className={`px-3 py-1.5 rounded text-xs font-semibold transition-colors whitespace-nowrap ${
+              className={`nr-focus-ring nr-transition px-3 py-1 rounded-md text-xs font-semibold whitespace-nowrap ${
                 categoryFilter === cat
-                  ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                  ? 'bg-[var(--nr-surface)] text-[var(--nr-text)] border border-[var(--nr-border)] shadow-xs'
+                  : 'text-[var(--nr-text-secondary)] hover:text-[var(--nr-text)]'
               }`}
             >
               {cat === 'ALL' ? t.common.all : t.noveltyCategories[cat]}
             </button>
           ))}
         </div>
-      </div>
+      </ErpFilterBar>
 
       <DataTable
         columns={columns}
@@ -463,13 +460,13 @@ export const NoveltiesScreen: React.FC = () => {
             <div className="space-y-2.5">
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <div className="font-mono-num text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
+                  <div className="font-mono-num text-[11px] font-semibold text-[var(--nr-primary)]">
                     {emp?.code ?? '—'}
                   </div>
-                  <div className="font-semibold text-sm text-slate-900 dark:text-slate-100">
+                  <div className="font-semibold text-sm text-[var(--nr-text)]">
                     {emp?.fullName ?? nov.employeeId}
                   </div>
-                  <div className="text-xs text-slate-600 dark:text-slate-300">
+                  <div className="text-xs text-[var(--nr-text-secondary)]">
                     {t.noveltyConcepts[nov.conceptCode]}
                   </div>
                 </div>
@@ -480,8 +477,8 @@ export const NoveltiesScreen: React.FC = () => {
                 />
               </div>
 
-              <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
-                <span className="font-mono-num text-xs text-slate-500 dark:text-slate-400">
+              <div className="flex items-center justify-between pt-2 border-t border-[var(--nr-border)]">
+                <span className="font-mono-num text-xs text-[var(--nr-text-secondary)]">
                   {formatDateLocalized(nov.date, locale)}
                 </span>
                 <MoneyCell
@@ -492,14 +489,14 @@ export const NoveltiesScreen: React.FC = () => {
               </div>
 
               {canEdit && (
-                <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                <div className="flex items-center justify-end gap-2 pt-2 border-t border-[var(--nr-border)]">
                   <button
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
                       openEditModal(nov);
                     }}
-                    className="inline-flex items-center gap-1 rounded border border-slate-200 dark:border-slate-700 px-2.5 py-1 text-xs font-medium text-slate-700 dark:text-slate-200"
+                    className="nr-focus-ring nr-transition inline-flex items-center gap-1 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface)] px-2.5 py-1 text-xs font-medium text-[var(--nr-text)]"
                   >
                     <Edit3 className="w-3 h-3" />
                     <span>{t.common.edit}</span>
@@ -510,7 +507,7 @@ export const NoveltiesScreen: React.FC = () => {
                       e.stopPropagation();
                       handleDelete(nov);
                     }}
-                    className="inline-flex items-center gap-1 rounded border border-red-200 dark:border-red-900/60 px-2.5 py-1 text-xs font-medium text-red-700 dark:text-red-400"
+                    className="nr-focus-ring nr-transition inline-flex items-center gap-1 rounded-lg border border-[var(--nr-error-border)] bg-[var(--nr-error-bg)] px-2.5 py-1 text-xs font-medium text-[var(--nr-error)]"
                   >
                     <Trash2 className="w-3 h-3" />
                     <span>{t.common.delete}</span>
@@ -522,153 +519,146 @@ export const NoveltiesScreen: React.FC = () => {
         }}
       />
 
-      {/* Create / Edit Draft Novelty Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60">
-          <div className="w-full max-w-md rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xl">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-800">
-              <h2 className="font-display text-base font-bold text-slate-900 dark:text-slate-100">
-                {editingNovelty
-                  ? t.noveltiesScreen.editNovelty
-                  : t.noveltiesScreen.addNovelty}
-              </h2>
-              <button
-                type="button"
-                onClick={() => setIsModalOpen(false)}
-                className="p-1 rounded text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmitForm} className="p-4 space-y-3.5">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  {t.common.employee}
-                </label>
-                <select
-                  value={formEmployeeId}
-                  onChange={(e) => setFormEmployeeId(e.target.value)}
-                  className="w-full h-9 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:border-emerald-500"
-                >
-                  {employees.map((emp) => (
-                    <option key={emp.id} value={emp.id}>
-                      {emp.code} · {emp.fullName}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    {t.common.date}
-                  </label>
-                  <input
-                    type="date"
-                    value={formDate}
-                    onChange={(e) => setFormDate(e.target.value)}
-                    className="w-full h-9 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:border-emerald-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    {t.noveltiesScreen.category}
-                  </label>
-                  <select
-                    value={formCategory}
-                    onChange={(e) =>
-                      setFormCategory(e.target.value as NoveltyCategory)
-                    }
-                    className="w-full h-9 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:border-emerald-500"
-                  >
-                    <option value="EARNING">{t.noveltyCategories.EARNING}</option>
-                    <option value="DEDUCTION">{t.noveltyCategories.DEDUCTION}</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  {t.noveltiesScreen.concept}
-                </label>
-                <select
-                  value={formConcept}
-                  onChange={(e) => {
-                    const code = e.target.value as NoveltyConceptCode;
-                    setFormConcept(code);
-                    setFormCategory(CONCEPT_CATEGORY_DEFAULT[code]);
-                  }}
-                  className="w-full h-9 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:border-emerald-500"
-                >
-                  {(Object.keys(t.noveltyConcepts) as NoveltyConceptCode[]).map(
-                    (code) => (
-                      <option key={code} value={code}>
-                        {t.noveltyConcepts[code]}
-                      </option>
-                    )
-                  )}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  {t.common.amount}
-                </label>
-                <div className="flex items-center h-9 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 overflow-hidden focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/20">
-                  <span className="px-2.5 h-full flex items-center bg-slate-100 dark:bg-slate-700 border-r border-slate-300 dark:border-slate-600 font-mono-num text-xs font-semibold text-slate-700 dark:text-slate-200">
-                    RD$
-                  </span>
-                  <input
-                    type="number"
-                    min="0.01"
-                    step="0.01"
-                    value={formAmount}
-                    onChange={(e) => setFormAmount(e.target.value)}
-                    placeholder={t.noveltiesScreen.amountPlaceholder}
-                    className="flex-1 h-full px-2.5 bg-transparent font-mono-num text-sm text-slate-900 dark:text-slate-100 focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  {t.noveltiesScreen.noteLabel}
-                </label>
-                <input
-                  type="text"
-                  value={formNote}
-                  onChange={(e) => setFormNote(e.target.value)}
-                  className="w-full h-9 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:border-emerald-500"
-                />
-              </div>
-
-              {formError && (
-                <div className="text-xs font-medium text-red-600 dark:text-red-400">
-                  {formError}
-                </div>
-              )}
-
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="h-9 px-3.5 rounded border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
-                >
-                  {t.common.cancel}
-                </button>
-                <button
-                  type="submit"
-                  disabled={isMutating}
-                  className="h-9 px-4 rounded bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-xs font-semibold text-white"
-                >
-                  {t.common.save}
-                </button>
-              </div>
-            </form>
+      <ErpModal
+        open={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={
+          editingNovelty
+            ? t.noveltiesScreen.editNovelty
+            : t.noveltiesScreen.addNovelty
+        }
+        maxWidthClass="max-w-md"
+        closeLabel={t.common.close}
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={() => setIsModalOpen(false)}
+              disabled={isMutating}
+              className="nr-focus-ring nr-transition h-9 px-3.5 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface)] text-xs font-semibold text-[var(--nr-text)] hover:bg-[var(--nr-surface-muted)]"
+            >
+              {t.common.cancel}
+            </button>
+            <button
+              type="submit"
+              form="nr-novelty-form"
+              disabled={isMutating}
+              className="nr-focus-ring nr-transition h-9 px-4 rounded-lg bg-[var(--nr-primary)] hover:bg-[var(--nr-primary-hover)] disabled:opacity-50 text-xs font-semibold text-[var(--nr-primary-fg)]"
+            >
+              {t.common.save}
+            </button>
+          </>
+        }
+      >
+        <form id="nr-novelty-form" onSubmit={handleSubmitForm} className="space-y-3.5">
+          <div>
+            <label className="block text-xs font-semibold text-[var(--nr-text)] mb-1">
+              {t.common.employee}
+            </label>
+            <select
+              value={formEmployeeId}
+              onChange={(e) => setFormEmployeeId(e.target.value)}
+              className="nr-focus-ring nr-transition w-full h-9 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-2.5 text-sm text-[var(--nr-text)]"
+            >
+              {employees.map((emp) => (
+                <option key={emp.id} value={emp.id}>
+                  {emp.code} · {emp.fullName}
+                </option>
+              ))}
+            </select>
           </div>
-        </div>
-      )}
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-[var(--nr-text)] mb-1">
+                {t.common.date}
+              </label>
+              <input
+                type="date"
+                value={formDate}
+                onChange={(e) => setFormDate(e.target.value)}
+                className="nr-focus-ring nr-transition w-full h-9 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-2.5 text-sm text-[var(--nr-text)]"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-[var(--nr-text)] mb-1">
+                {t.noveltiesScreen.category}
+              </label>
+              <select
+                value={formCategory}
+                onChange={(e) =>
+                  setFormCategory(e.target.value as NoveltyCategory)
+                }
+                className="nr-focus-ring nr-transition w-full h-9 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-2.5 text-sm text-[var(--nr-text)]"
+              >
+                <option value="EARNING">{t.noveltyCategories.EARNING}</option>
+                <option value="DEDUCTION">{t.noveltyCategories.DEDUCTION}</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-[var(--nr-text)] mb-1">
+              {t.noveltiesScreen.concept}
+            </label>
+            <select
+              value={formConcept}
+              onChange={(e) => {
+                const code = e.target.value as NoveltyConceptCode;
+                setFormConcept(code);
+                setFormCategory(CONCEPT_CATEGORY_DEFAULT[code]);
+              }}
+              className="nr-focus-ring nr-transition w-full h-9 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-2.5 text-sm text-[var(--nr-text)]"
+            >
+              {(Object.keys(t.noveltyConcepts) as NoveltyConceptCode[]).map(
+                (code) => (
+                  <option key={code} value={code}>
+                    {t.noveltyConcepts[code]}
+                  </option>
+                )
+              )}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-[var(--nr-text)] mb-1">
+              {t.common.amount}
+            </label>
+            <div className="flex items-center h-9 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] overflow-hidden focus-within:border-[var(--nr-primary)] focus-within:ring-2 focus-within:ring-[var(--nr-primary)]/20">
+              <span className="px-2.5 h-full flex items-center bg-[var(--nr-surface-muted)] border-r border-[var(--nr-border)] font-mono-num text-xs font-semibold text-[var(--nr-text)]">
+                RD$
+              </span>
+              <input
+                type="number"
+                min="0.01"
+                step="0.01"
+                value={formAmount}
+                onChange={(e) => setFormAmount(e.target.value)}
+                placeholder={t.noveltiesScreen.amountPlaceholder}
+                className="flex-1 h-full px-2.5 bg-transparent font-mono-num text-sm text-[var(--nr-text)] focus:outline-none"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-[var(--nr-text)] mb-1">
+              {t.noveltiesScreen.noteLabel}
+            </label>
+            <input
+              type="text"
+              value={formNote}
+              onChange={(e) => setFormNote(e.target.value)}
+              className="nr-focus-ring nr-transition w-full h-9 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-2.5 text-sm text-[var(--nr-text)]"
+            />
+          </div>
+
+          {formError && (
+            <div className="text-xs font-medium text-[var(--nr-error)]">
+              {formError}
+            </div>
+          )}
+        </form>
+      </ErpModal>
     </div>
   );
 };

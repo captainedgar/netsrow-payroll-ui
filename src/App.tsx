@@ -79,15 +79,23 @@ function PreviewRouterContent() {
       navigateRoute(nextRoute);
 
       if (typeof window !== 'undefined') {
+        const prefersReduced =
+          window.matchMedia &&
+          window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const scrollBehavior: ScrollBehavior = prefersReduced ? 'auto' : 'smooth';
+
         if (hash) {
           window.setTimeout(() => {
             const el = document.getElementById(hash);
             if (el) {
-              el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              el.scrollIntoView({ behavior: scrollBehavior, block: 'start' });
+              window.dispatchEvent(
+                new CustomEvent('netsrow:section-arrive', { detail: { id: hash } })
+              );
             }
           }, 60);
         } else {
-          window.scrollTo({ top: 0, behavior: 'smooth' });
+          window.scrollTo({ top: 0, behavior: scrollBehavior });
         }
       }
     },

@@ -32,16 +32,16 @@ export function DataTable<T>({
 }: DataTableProps<T>) {
   if (isLoading) {
     return (
-      <div className="rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden">
-        <div className="divide-y divide-slate-200 dark:divide-slate-800">
+      <div className="rounded-xl border border-[var(--nr-border)] bg-[var(--nr-surface)] overflow-hidden">
+        <div className="divide-y divide-[var(--nr-border)]">
           {[0, 1, 2, 3, 4].map((idx) => (
             <div
               key={idx}
               className="h-11 px-4 flex items-center gap-4 animate-pulse"
             >
-              <div className="h-3 w-20 rounded bg-slate-200 dark:bg-slate-700" />
-              <div className="h-3 w-44 rounded bg-slate-200 dark:bg-slate-700" />
-              <div className="ml-auto h-3 w-24 rounded bg-slate-200 dark:bg-slate-700" />
+              <div className="h-3 w-20 rounded bg-[var(--nr-surface-muted)]" />
+              <div className="h-3 w-44 rounded bg-[var(--nr-surface-muted)]" />
+              <div className="ml-auto h-3 w-24 rounded bg-[var(--nr-surface-muted)]" />
             </div>
           ))}
         </div>
@@ -51,7 +51,7 @@ export function DataTable<T>({
 
   if (rows.length === 0) {
     return (
-      <div className="rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-8 text-center text-sm text-slate-500 dark:text-slate-400">
+      <div className="rounded-xl border border-[var(--nr-border)] bg-[var(--nr-surface)] p-8 text-center text-sm text-[var(--nr-text-secondary)]">
         {emptyMessage}
       </div>
     );
@@ -63,20 +63,20 @@ export function DataTable<T>({
       <div
         className={`${
           mobileCardRender ? 'hidden md:block' : 'block'
-        } rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-x-auto`}
+        } rounded-xl border border-[var(--nr-border)] bg-[var(--nr-surface)] overflow-x-auto`}
       >
         <table className="w-full border-collapse text-left">
           <thead>
-            <tr className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-300 dark:border-slate-700">
+            <tr className="bg-[var(--nr-surface-muted)] border-b border-[var(--nr-border)]">
               {columns.map((col) => (
                 <th
                   key={col.key}
                   scope="col"
-                  className={`px-3 py-2.5 text-[11px] font-semibold tracking-wider uppercase text-slate-600 dark:text-slate-300 whitespace-nowrap ${
+                  className={`px-3.5 py-2.5 text-[11px] font-semibold tracking-wider uppercase text-[var(--nr-text-secondary)] whitespace-nowrap ${
                     col.align === 'right' ? 'text-right' : 'text-left'
                   } ${
                     col.stickyLeft
-                      ? 'sticky left-0 z-10 bg-slate-50 dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700'
+                      ? 'sticky left-0 z-10 bg-[var(--nr-surface-muted)] border-r border-[var(--nr-border)]'
                       : ''
                   } ${col.minWidthClass ?? ''}`}
                 >
@@ -85,39 +85,39 @@ export function DataTable<T>({
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+          <tbody className="divide-y divide-[var(--nr-border)]">
             {rows.map((row, idx) => {
               const key = getRowKey(row);
               const isSelected = selectedRowKey === key;
               const rowBg = isSelected
-                ? 'bg-emerald-50/80 dark:bg-emerald-950/35'
+                ? 'bg-[var(--nr-success-bg)]'
                 : idx % 2 === 1
-                  ? 'bg-slate-50/50 dark:bg-slate-900/60'
-                  : 'bg-white dark:bg-slate-900';
+                  ? 'bg-[var(--nr-surface-elevated)]'
+                  : 'bg-[var(--nr-surface)]';
 
               return (
                 <tr
                   key={key}
                   onClick={onRowClick ? () => onRowClick(row) : undefined}
-                  className={`h-10 transition-colors ${rowBg} ${
+                  className={`nr-transition h-11 ${rowBg} ${
                     onRowClick
-                      ? 'cursor-pointer hover:bg-slate-100/80 dark:hover:bg-slate-800/70'
+                      ? 'cursor-pointer hover:bg-[var(--nr-surface-muted)]'
                       : ''
                   }`}
                 >
                   {columns.map((col) => (
                     <td
                       key={col.key}
-                      className={`px-3 py-2 text-[13px] text-slate-800 dark:text-slate-200 ${
-                        col.align === 'right' ? 'text-right' : 'text-left'
+                      className={`px-3.5 py-2.5 text-[13px] text-[var(--nr-text)] ${
+                        col.align === 'right' ? 'text-right tabular-nums' : 'text-left'
                       } ${
                         col.stickyLeft
-                          ? `sticky left-0 z-10 border-r border-slate-200 dark:border-slate-700 ${
+                          ? `sticky left-0 z-10 border-r border-[var(--nr-border)] ${
                               isSelected
-                                ? 'bg-emerald-50 dark:bg-emerald-950'
+                                ? 'bg-[var(--nr-success-bg)]'
                                 : idx % 2 === 1
-                                  ? 'bg-slate-50 dark:bg-slate-900'
-                                  : 'bg-white dark:bg-slate-900'
+                                  ? 'bg-[var(--nr-surface-elevated)]'
+                                  : 'bg-[var(--nr-surface)]'
                             }`
                           : ''
                       }`}
@@ -142,10 +142,10 @@ export function DataTable<T>({
               <div
                 key={key}
                 onClick={onRowClick ? () => onRowClick(row) : undefined}
-                className={`rounded-md border p-3.5 transition-colors ${
+                className={`nr-transition rounded-xl border p-3.5 ${
                   isSelected
-                    ? 'bg-emerald-50/70 border-emerald-400 dark:bg-emerald-950/30 dark:border-emerald-700'
-                    : 'bg-white border-slate-200 dark:bg-slate-900 dark:border-slate-700'
+                    ? 'bg-[var(--nr-success-bg)] border-[var(--nr-success-border)]'
+                    : 'bg-[var(--nr-surface)] border-[var(--nr-border)]'
                 } ${onRowClick ? 'cursor-pointer' : ''}`}
               >
                 {mobileCardRender(row, isSelected)}

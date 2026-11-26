@@ -39,7 +39,7 @@ export const MoneyCell: React.FC<MoneyCellProps> = ({
   if (isPending) {
     return (
       <span
-        className={`inline-flex items-center font-sans text-xs font-medium italic text-slate-400 dark:text-slate-500 ${className}`}
+        className={`inline-flex items-center font-sans text-xs font-medium italic text-[var(--nr-text-secondary)] ${className}`}
       >
         {text}
       </span>
@@ -47,13 +47,16 @@ export const MoneyCell: React.FC<MoneyCellProps> = ({
   }
 
   const toneClass = emphasize
-    ? 'text-emerald-700 dark:text-emerald-300'
+    ? 'text-[var(--nr-primary)]'
     : isZero
-      ? 'text-slate-500 dark:text-slate-400'
-      : 'text-slate-900 dark:text-slate-100';
+      ? 'text-[var(--nr-text-secondary)]'
+      : 'text-[var(--nr-text)]';
 
   return (
-    <span className={`font-mono-num whitespace-nowrap ${sizeClass} ${toneClass} ${className}`}>
+    <span
+      data-tabular="true"
+      className={`font-mono-num whitespace-nowrap tabular-nums ${sizeClass} ${toneClass} ${className}`}
+    >
       {text}
     </span>
   );

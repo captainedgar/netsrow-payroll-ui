@@ -1,6 +1,11 @@
 import React, { useState } from 'react';
-import { CheckCircle2, CreditCard, ShieldAlert, X } from 'lucide-react';
+import { CheckCircle2, CreditCard, ShieldAlert } from 'lucide-react';
 import { DataTable, DataTableColumn } from '../components/DataTable';
+import {
+  ErpModal,
+  ErpPageHeader,
+  ErpSurfaceCard,
+} from '../components/ErpUiPrimitives';
 import { MoneyCell } from '../components/MoneyCell';
 import { StatusBadge } from '../components/StatusBadge';
 import { usePlatform } from '../context/PlatformContext';
@@ -80,12 +85,12 @@ export const PlatformSubscriptionsScreen: React.FC = () => {
         <button
           type="button"
           onClick={() => openTenantDetail(t.id)}
-          className="text-left group"
+          className="nr-focus-ring text-left group rounded"
         >
-          <div className="font-semibold text-slate-900 dark:text-slate-100 group-hover:text-emerald-700 dark:group-hover:text-emerald-400">
+          <div className="font-semibold text-[var(--nr-text)] group-hover:text-[var(--nr-primary)]">
             {t.name}
           </div>
-          <div className="text-[11px] text-slate-500">
+          <div className="text-[11px] text-[var(--nr-text-secondary)]">
             {t.code} · {locale === 'es' ? t.planNameSnapshotEs : t.planNameSnapshotEn}
           </div>
         </button>
@@ -159,7 +164,7 @@ export const PlatformSubscriptionsScreen: React.FC = () => {
         <button
           type="button"
           onClick={() => openManualPaymentModal(t)}
-          className="inline-flex items-center gap-1 rounded border border-emerald-300 dark:border-emerald-800 bg-emerald-50/70 dark:bg-emerald-950/30 px-2.5 py-1 text-[11px] font-semibold text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 whitespace-nowrap"
+          className="nr-focus-ring nr-transition inline-flex items-center gap-1 rounded-lg border border-[var(--nr-success-border)] bg-[var(--nr-success-bg)] px-2.5 py-1 text-[11px] font-semibold text-[var(--nr-success)] hover:opacity-90 whitespace-nowrap"
         >
           <CheckCircle2 className="w-3.5 h-3.5" />
           <span>
@@ -174,20 +179,18 @@ export const PlatformSubscriptionsScreen: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-display text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100">
-          {pt.platformNav.subscriptions}
-        </h1>
-        <p className="mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-          {locale === 'es'
+      <ErpPageHeader
+        title={pt.platformNav.subscriptions}
+        subtitle={
+          locale === 'es'
             ? 'Separación explícita entre estado operativo de empresa, estado de suscripción y estado de pago administrativo.'
-            : 'Explicit separation between company operational status, subscription status, and manual payment status.'}
-        </p>
-      </div>
+            : 'Explicit separation between company operational status, subscription status, and manual payment status.'
+        }
+      />
 
       {/* Explicit non-billing notice */}
-      <div className="rounded-md border border-amber-300/80 dark:border-amber-800/70 bg-amber-50/70 dark:bg-amber-950/30 px-4 py-3 flex items-start gap-2.5 text-xs text-amber-900 dark:text-amber-200">
-        <ShieldAlert className="w-4 h-4 shrink-0 mt-0.5" />
+      <div className="rounded-xl border border-[var(--nr-warning-border)] bg-[var(--nr-warning-bg)] px-4 py-3 flex items-start gap-2.5 text-xs text-[var(--nr-text)]">
+        <ShieldAlert className="w-4 h-4 text-[var(--nr-warning)] shrink-0 mt-0.5" />
         <span>
           {locale === 'es'
             ? 'Solo demo: este módulo registra confirmaciones administrativas manuales y previene referencias duplicadas. No procesa cobros automáticos ni tarjetas reales.'
@@ -207,10 +210,10 @@ export const PlatformSubscriptionsScreen: React.FC = () => {
       />
 
       {/* Recorded Manual Confirmations History */}
-      <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden">
-        <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-800 flex items-center gap-2">
-          <CreditCard className="w-4 h-4 text-emerald-600" />
-          <h2 className="font-display text-sm font-bold">
+      <ErpSurfaceCard padding="none" className="overflow-hidden">
+        <div className="px-4 py-3 border-b border-[var(--nr-border)] flex items-center gap-2">
+          <CreditCard className="w-4 h-4 text-[var(--nr-primary)]" />
+          <h2 className="font-display text-sm font-bold text-[var(--nr-text)]">
             {locale === 'es'
               ? 'Confirmaciones manuales registradas (Solo demo)'
               : 'Recorded manual confirmations (Demo only)'}
@@ -220,7 +223,7 @@ export const PlatformSubscriptionsScreen: React.FC = () => {
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
-              <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 text-slate-500">
+              <tr className="border-b border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] text-[var(--nr-text-secondary)]">
                 <th className="py-2.5 px-4 text-left font-semibold">
                   {locale === 'es' ? 'Referencia' : 'Reference'}
                 </th>
@@ -238,20 +241,20 @@ export const PlatformSubscriptionsScreen: React.FC = () => {
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+            <tbody className="divide-y divide-[var(--nr-border)]">
               {platformState.payments.map((pay) => (
                 <tr key={pay.id}>
-                  <td className="py-2.5 px-4 font-mono-num font-bold text-emerald-700 dark:text-emerald-400">
+                  <td className="py-2.5 px-4 font-mono-num font-bold text-[var(--nr-primary)]">
                     {pay.reference}
                   </td>
                   <td className="py-2.5 px-4">
-                    <div className="font-semibold text-slate-900 dark:text-slate-100">
+                    <div className="font-semibold text-[var(--nr-text)]">
                       {pay.tenantName}
                     </div>
-                    <div className="text-[11px] text-slate-500">{pay.note}</div>
+                    <div className="text-[11px] text-[var(--nr-text-secondary)]">{pay.note}</div>
                   </td>
-                  <td className="py-2.5 px-4 font-mono-num">{pay.paymentDate}</td>
-                  <td className="py-2.5 px-4 text-slate-600 dark:text-slate-300">
+                  <td className="py-2.5 px-4 font-mono-num text-[var(--nr-text)]">{pay.paymentDate}</td>
+                  <td className="py-2.5 px-4 text-[var(--nr-text-secondary)]">
                     {pay.recordedBy}
                   </td>
                   <td className="py-2.5 px-4 text-right">
@@ -262,122 +265,117 @@ export const PlatformSubscriptionsScreen: React.FC = () => {
             </tbody>
           </table>
         </div>
-      </div>
+      </ErpSurfaceCard>
 
       {/* Confirm Manual Payment Modal */}
-      {paymentModalTenant && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60">
-          <div className="w-full max-w-md rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xl">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-800">
-              <h2 className="font-display text-base font-bold">
-                {locale === 'es'
-                  ? 'Confirmar pago manual (Solo demo)'
-                  : 'Confirm manual payment (Demo only)'}
-              </h2>
-              <button
-                type="button"
-                onClick={() => setPaymentModalTenant(null)}
-                className="p-1 text-slate-500"
-              >
-                <X className="w-4 h-4" />
-              </button>
+      <ErpModal
+        open={Boolean(paymentModalTenant)}
+        onClose={() => setPaymentModalTenant(null)}
+        maxWidthClass="max-w-md"
+        closeLabel={locale === 'es' ? 'Cerrar' : 'Close'}
+        title={
+          locale === 'es'
+            ? 'Confirmar pago manual (Solo demo)'
+            : 'Confirm manual payment (Demo only)'
+        }
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={() => setPaymentModalTenant(null)}
+              className="nr-focus-ring nr-transition h-9 px-3.5 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface)] text-xs font-semibold text-[var(--nr-text)]"
+            >
+              {locale === 'es' ? 'Cancelar' : 'Cancel'}
+            </button>
+            <button
+              type="submit"
+              form="platform-manual-payment-form"
+              disabled={isMutating}
+              className="nr-focus-ring nr-transition h-9 px-4 rounded-lg bg-[var(--nr-primary)] hover:bg-[var(--nr-primary-hover)] disabled:opacity-50 text-xs font-semibold text-[var(--nr-primary-fg)]"
+            >
+              {locale === 'es'
+                ? 'Confirmar pago (Solo demo)'
+                : 'Confirm payment (Demo)'}
+            </button>
+          </>
+        }
+      >
+        {paymentModalTenant && (
+          <form id="platform-manual-payment-form" onSubmit={handleConfirmPayment} className="space-y-3 text-xs">
+            <div className="rounded-xl border border-[var(--nr-warning-border)] bg-[var(--nr-warning-bg)] p-2.5 text-[11px] text-[var(--nr-text)]">
+              {locale === 'es'
+                ? 'Confirmación administrativa ficticia: registra la referencia y marca el pago como Al día sin ejecutar cobro bancario.'
+                : 'Administrative demo confirmation: logs the reference and marks payment Paid without any real bank charge.'}
             </div>
 
-            <form onSubmit={handleConfirmPayment} className="p-4 space-y-3 text-xs">
-              <div className="rounded border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 p-2.5 text-[11px] text-amber-900 dark:text-amber-200">
-                {locale === 'es'
-                  ? 'Confirmación administrativa ficticia: registra la referencia y marca el pago como Al día sin ejecutar cobro bancario.'
-                  : 'Administrative demo confirmation: logs the reference and marks payment Paid without any real bank charge.'}
+            {modalError && (
+              <div
+                role="alert"
+                className="rounded-xl border border-[var(--nr-error-border)] bg-[var(--nr-error-bg)] p-2.5 text-[var(--nr-error)]"
+              >
+                {modalError}
               </div>
+            )}
 
-              {modalError && (
-                <div
-                  role="alert"
-                  className="rounded border border-red-300 dark:border-red-900 bg-red-50 dark:bg-red-950/40 p-2.5 text-red-900 dark:text-red-200"
-                >
-                  {modalError}
-                </div>
-              )}
+            <div>
+              <div className="text-[var(--nr-text-secondary)]">{locale === 'es' ? 'Empresa' : 'Company'}</div>
+              <div className="font-bold text-sm text-[var(--nr-text)]">{paymentModalTenant.name}</div>
+            </div>
 
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <div className="text-slate-500">{locale === 'es' ? 'Empresa' : 'Company'}</div>
-                <div className="font-bold text-sm">{paymentModalTenant.name}</div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-semibold mb-1">
-                    {locale === 'es' ? 'Importe (RD$)' : 'Amount (RD$)'}
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    step="0.01"
-                    required
-                    value={amountDop}
-                    onChange={(e) => setAmountDop(e.target.value)}
-                    className="w-full h-9 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 font-mono-num"
-                  />
-                </div>
-                <div>
-                  <label className="block font-semibold mb-1">
-                    {locale === 'es' ? 'Fecha del comprobante' : 'Receipt date'}
-                  </label>
-                  <input
-                    type="date"
-                    required
-                    value={paymentDate}
-                    onChange={(e) => setPaymentDate(e.target.value)}
-                    className="w-full h-9 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 font-mono-num"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block font-semibold mb-1">
-                  {locale === 'es' ? 'Referencia bancaria única' : 'Unique bank reference'}
+                <label className="block font-semibold text-[var(--nr-text)] mb-1">
+                  {locale === 'es' ? 'Importe (RD$)' : 'Amount (RD$)'}
                 </label>
                 <input
+                  type="number"
+                  min="1"
+                  step="0.01"
                   required
-                  value={reference}
-                  onChange={(e) => setReference(e.target.value)}
-                  className="w-full h-9 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 font-mono-num uppercase"
+                  value={amountDop}
+                  onChange={(e) => setAmountDop(e.target.value)}
+                  className="nr-focus-ring nr-transition w-full h-9 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-2.5 font-mono-num text-[var(--nr-text)]"
                 />
               </div>
-
               <div>
-                <label className="block font-semibold mb-1">
-                  {locale === 'es' ? 'Nota administrativa' : 'Admin note'}
+                <label className="block font-semibold text-[var(--nr-text)] mb-1">
+                  {locale === 'es' ? 'Fecha del comprobante' : 'Receipt date'}
                 </label>
                 <input
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                  className="w-full h-9 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 text-sm"
+                  type="date"
+                  required
+                  value={paymentDate}
+                  onChange={(e) => setPaymentDate(e.target.value)}
+                  className="nr-focus-ring nr-transition w-full h-9 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-2.5 font-mono-num text-[var(--nr-text)]"
                 />
               </div>
+            </div>
 
-              <div className="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setPaymentModalTenant(null)}
-                  className="h-9 px-3.5 rounded border border-slate-300 dark:border-slate-700 font-semibold"
-                >
-                  {locale === 'es' ? 'Cancelar' : 'Cancel'}
-                </button>
-                <button
-                  type="submit"
-                  disabled={isMutating}
-                  className="h-9 px-4 rounded bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
-                >
-                  {locale === 'es'
-                    ? 'Confirmar pago (Solo demo)'
-                    : 'Confirm payment (Demo)'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+            <div>
+              <label className="block font-semibold text-[var(--nr-text)] mb-1">
+                {locale === 'es' ? 'Referencia bancaria única' : 'Unique bank reference'}
+              </label>
+              <input
+                required
+                value={reference}
+                onChange={(e) => setReference(e.target.value)}
+                className="nr-focus-ring nr-transition w-full h-9 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-2.5 font-mono-num uppercase text-[var(--nr-text)]"
+              />
+            </div>
+
+            <div>
+              <label className="block font-semibold text-[var(--nr-text)] mb-1">
+                {locale === 'es' ? 'Nota administrativa' : 'Admin note'}
+              </label>
+              <input
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                className="nr-focus-ring nr-transition w-full h-9 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-2.5 text-sm text-[var(--nr-text)]"
+              />
+            </div>
+          </form>
+        )}
+      </ErpModal>
     </div>
   );
 };

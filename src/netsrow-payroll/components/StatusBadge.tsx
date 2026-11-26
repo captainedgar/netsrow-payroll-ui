@@ -225,15 +225,15 @@ export interface StatusBadgeProps {
 
 const TONE_CLASSES: Record<BadgeTone, string> = {
   neutral:
-    'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700',
+    'bg-[var(--nr-surface-muted)] text-[var(--nr-text-secondary)] border-[var(--nr-border)]',
   amber:
-    'bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800/70',
+    'bg-[var(--nr-warning-bg)] text-[var(--nr-warning)] border-[var(--nr-warning-border)]',
   emerald:
-    'bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800/70',
+    'bg-[var(--nr-success-bg)] text-[var(--nr-success)] border-[var(--nr-success-border)]',
   crimson:
-    'bg-red-50 text-red-800 border-red-200 dark:bg-red-950/60 dark:text-red-300 dark:border-red-800/70',
+    'bg-[var(--nr-error-bg)] text-[var(--nr-error)] border-[var(--nr-error-border)]',
   navy:
-    'bg-slate-900 text-white border-slate-800 dark:bg-slate-700 dark:text-slate-100 dark:border-slate-600',
+    'bg-[#081321] text-white border-[#1E2E44] dark:bg-[var(--nr-surface-elevated)] dark:text-[var(--nr-text)] dark:border-[var(--nr-border)]',
 };
 
 export const StatusBadge: React.FC<StatusBadgeProps> = ({
@@ -279,7 +279,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
     <span
       data-status-tone={resolvedTone}
       data-activity-status={activityStatus ?? undefined}
-      className={`inline-flex items-center gap-1.5 rounded px-2 py-0.5 border text-[11px] font-semibold leading-4 whitespace-nowrap shrink-0 ${TONE_CLASSES[resolvedTone]} ${className}`}
+      className={`inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 border text-[11px] font-semibold leading-4 whitespace-nowrap shrink-0 ${TONE_CLASSES[resolvedTone]} ${className}`}
     >
       {renderIcon()}
       <span>{resolvedLabel}</span>
