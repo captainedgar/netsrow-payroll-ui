@@ -1,0 +1,1 @@
+ALTER TABLE "Account" ADD COLUMN "canManageCatalog" BOOLEAN NOT NULL DEFAULT false;

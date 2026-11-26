@@ -13,12 +13,15 @@ try {
     ['test-a', 'Comercio A', 'Café de prueba'],
     ['test-b', 'Comercio B', 'Pintura de prueba'],
   ]) {
+    const canManageCatalog = id === 'test-a';
     await prisma.company.upsert({
       where: { id },
-      update: {},
+      update: {
+        accounts: { updateMany: { where: { email: `${id}@example.test` }, data: { canManageCatalog } } },
+      },
       create: {
         id, name,
-        accounts: { create: { email: `${id}@example.test`, password } },
+        accounts: { create: { email: `${id}@example.test`, password, canManageCatalog } },
         products: { create: { id: `${id}-product`, name: product } },
       },
     });

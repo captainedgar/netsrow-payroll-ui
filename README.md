@@ -92,3 +92,17 @@ y comprueba que los productos pertenecen a su empresa. La configuración
 predeterminada conserva el recorrido demo. Antes de habilitar el acceso público
 quedan pendientes altas, recuperación, roles, módulos, controles de abuso y
 el acceso de Superadmin.
+
+## Fase 4 · Alta de productos en el piloto
+
+En una base local de pruebas, detén la API, ejecuta `npm run db:generate` y
+`npm run db:migrate` y vuelve a ejecutar `db:seed:tenants` con el indicador
+de prueba indicado arriba. El seed autoriza el alta para `test-a@example.test`.
+La cuenta `test-b@example.test` conserva el acceso de solo lectura.
+
+Con `VITE_NETSROW_TENANT_ACCESS=true`, inicia sesión como Comercio A, registra
+un producto y recarga. Al iniciar sesión como Comercio B, el producto de la
+otra empresa y el formulario de alta quedan fuera de la vista. La API verifica
+el permiso y toma la empresa desde la sesión. Este incremento registra nombre
+e identificador. SKU, precio, existencias, edición y flujos de venta quedan
+pendientes.

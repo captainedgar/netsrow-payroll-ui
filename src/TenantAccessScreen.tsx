@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 
-type Catalog = { company: { name: string }; products: { id: string; name: string }[] };
+type Product = { id: string; name: string };
+type Catalog = { company: { name: string }; products: Product[]; canManageCatalog: boolean };
 
 type TenantAccessProps = {
   locale?: 'es' | 'en';
@@ -13,7 +14,7 @@ export function TenantAccessScreen({ locale = 'es', route, onNavigate }: TenantA
   const [catalog, setCatalog] = useState<Catalog | null>(null);
   const [busy, setBusy] = useState(true);
   const [ready, setReady] = useState(false);
-  const [error, setError] = useState<'catalog' | 'credentials' | 'login' | 'logout' | ''>('');
+  const [error, setError] = useState<'catalog' | 'credentials' | 'login' | 'logout' | 'create' | 'permission' | ''>('');
 
   async function fetchCatalog(signal?: AbortSignal) {
     const response = await fetch('/api/tenant/catalog', { signal });
@@ -63,6 +64,41 @@ export function TenantAccessScreen({ locale = 'es', route, onNavigate }: TenantA
     }
   }
 
+  async function createProduct(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const name = new FormData(form).get('name');
+    if (typeof name !== 'string' || !name.trim()) {
+      setError('create');
+      return;
+    }
+    setBusy(true);
+    setError('');
+    try {
+      const response = await fetch('/api/tenant/catalog', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Netsrow-Client': 'web' },
+        body: JSON.stringify({ name }),
+      });
+      if (response.status === 401) {
+        setCatalog(null);
+        return;
+      }
+      if (response.status === 403) {
+        setError('permission');
+        return;
+      }
+      if (!response.ok) throw new Error('create');
+      const product = (await response.json()) as Product;
+      setCatalog((current) => current && { ...current, products: [product, ...current.products] });
+      form.reset();
+    } catch {
+      setError('create');
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function logout() {
     setBusy(true);
     setError('');
@@ -83,6 +119,8 @@ export function TenantAccessScreen({ locale = 'es', route, onNavigate }: TenantA
     catalog: es ? 'No se pudo consultar la API.' : 'Could not reach the API.',
     credentials: es ? 'Correo o contraseña incorrectos.' : 'Invalid email or password.',
     login: es ? 'No se pudo iniciar sesión o consultar el catálogo.' : 'Could not sign in or load the catalog.',
+    create: es ? 'No se pudo guardar el producto. Verifica el nombre.' : 'Could not save the product. Check its name.',
+    permission: es ? 'Tu cuenta no puede registrar productos.' : 'Your account cannot add products.',
     logout: es ? 'No se pudo cerrar la sesión. Intenta de nuevo.' : 'Could not sign out. Try again.',
   };
 
@@ -92,13 +130,26 @@ export function TenantAccessScreen({ locale = 'es', route, onNavigate }: TenantA
       <h1 className="mt-6 text-3xl font-bold">{catalog ? catalog.company.name : es ? 'Acceso a tu empresa' : 'Sign in to your company'}</h1>
       <p className="mt-2 text-slate-600 dark:text-slate-300">
         {catalog
-          ? (es ? 'Catálogo de tu empresa · Solo lectura' : 'Company catalog · Read only')
+          ? (catalog.canManageCatalog
+            ? (es ? 'Catálogo de tu empresa' : 'Company catalog')
+            : (es ? 'Catálogo de tu empresa · Solo lectura' : 'Company catalog · Read only'))
           : (es ? 'Ingresa con la cuenta de tu empresa.' : 'Enter your company account credentials.')}
       </p>
       {error && <p role="alert" className="mt-4 text-red-800 dark:text-red-300">{messages[error]}</p>}
       {busy && <p role="status" className="mt-4">{es ? 'Procesando…' : 'Loading…'}</p>}
       {catalog ? (
         <>
+          {catalog.canManageCatalog && route === '/erp' && (
+            <form onSubmit={createProduct} className="mt-6 grid gap-3 rounded-xl border border-slate-200 p-4 dark:border-slate-700">
+              <label className="grid gap-1">
+                {es ? 'Nombre del producto' : 'Product name'}
+                <input name="name" required maxLength={120} className="rounded-lg border p-2 dark:border-slate-600 dark:bg-slate-800" />
+              </label>
+              <button type="submit" disabled={busy} className="rounded-lg bg-emerald-700 px-4 py-2 text-white disabled:opacity-60">
+                {es ? 'Registrar producto' : 'Add product'}
+              </button>
+            </form>
+          )}
           <ul className="mt-5 space-y-2">
             {catalog.products.map((product) => (
               <li key={product.id} className="rounded-lg border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 p-3">{product.name}</li>

@@ -23,6 +23,7 @@ model Account {
   id           String    @id @default(uuid())
   email        String    @unique
   password    String
+  canManageCatalog Boolean @default(false)
   companyId   String
   company     Company   @relation(fields: [companyId], references: [id])
   sessions    Session[]

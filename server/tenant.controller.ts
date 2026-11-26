@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from 'node:crypto';
 import {
-  Body, Controller, ForbiddenException, Get, Header, HttpCode, Inject,
+  BadRequestException, Body, Controller, ForbiddenException, Get, Header, HttpCode, Inject,
   NotFoundException, Param, Post, Req, Res, UnauthorizedException,
 } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
@@ -81,13 +81,30 @@ export class TenantController {
   @Get('catalog')
   @Header('Cache-Control', 'no-store')
   async catalog(@Req() request: Request) {
-    const { company } = await this.account(request);
+    const { company, canManageCatalog } = await this.account(request);
     const products = await this.prisma.product.findMany({
       where: { companyId: company.id },
       select: { id: true, name: true },
       orderBy: [{ name: 'asc' }, { id: 'asc' }],
     });
-    return { company, products };
+    return { company, products, canManageCatalog };
+  }
+
+  @Post('catalog')
+  async createProduct(@Req() request: Request, @Body() body: unknown) {
+    this.mutation(request);
+    const { companyId, canManageCatalog } = await this.account(request);
+    if (!canManageCatalog) throw new ForbiddenException();
+
+    const input = body as { name?: unknown } | null;
+    if (typeof input?.name !== 'string' || !input.name.trim() || input.name.trim().length > 120) {
+      throw new BadRequestException('Product name must contain 1 to 120 characters');
+    }
+
+    return this.prisma.product.create({
+      data: { name: input.name.trim(), companyId },
+      select: { id: true, name: true },
+    });
   }
 
   @Get('catalog/:id')
