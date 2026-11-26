@@ -15,7 +15,8 @@
     "db:migrate": "prisma migrate deploy",
     "db:seed": "node --import tsx server/seed.ts",
     "db:seed:tenants": "node --import tsx server/seed-tenants.ts",
-    "company:create": "node --import tsx server/provision-company.ts"
+    "company:create": "node --import tsx server/provision-company.ts",
+    "dev:local": "node scripts/dev-local.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

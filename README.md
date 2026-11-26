@@ -4,34 +4,42 @@ Frontend React, TypeScript, Tailwind y Vite. La base técnica incorpora una API 
 
 ## Desarrollo local
 
-Usa Node.js 24 y Docker Compose. Desde la raíz:
+Usa Node.js 24 y Docker Compose. Abre la carpeta del repositorio en VS Code
+y ejecuta desde su raíz:
 
 ```powershell
 if (!(Test-Path .env)) { Copy-Item .env.example .env }
 docker compose up -d postgres
 npm ci
-npm run db:generate
-npm run db:migrate
-npm run db:seed
-npm run api:dev
+npm run dev:local
 ```
 
-Si ya tienes un archivo `.env`, conserva su contenido y añade la variable `DATABASE_URL` del ejemplo. La base de desarrollo se publica en `127.0.0.1:55432`. La carga inicial crea el catálogo ficticio si aún no existe.
+Si PostgreSQL local ya corre en el puerto configurado en `.env`, reutilízalo.
+`dev:local` verifica los puertos, genera Prisma, aplica las migraciones y
+arranca NestJS y Vite en una terminal. Abre
+[http://localhost:3011/login](http://localhost:3011/login) cuando el comando
+confirme que ambos servicios responden. La API usa el puerto 3002 de forma
+predeterminada con este comando. Puedes configurar `API_PORT` y `WEB_PORT`
+en `.env`. Vite usa un puerto fijo y el proxy sigue el puerto efectivo de
+la API. El comando admite solo una base PostgreSQL local.
 
-En otra terminal, ejecuta `npm run dev` y abre `http://localhost:3000/base-tecnica` (o el puerto indicado por Vite). Esta vista de desarrollo consulta PostgreSQL por la API. Si falla la consulta, muestra un error. La portada comercial y las pantallas del ERP siguen usando los datos de la demo.
+Pulsa `Ctrl+C` para detener los dos procesos. Antes de cambiar de rama
+o regenerar Prisma, detén también cualquier API o Prisma Studio iniciado
+en otra terminal. Un puerto ocupado indica que hay otro proceso que debes
+identificar antes de detenerlo. El comando no cierra procesos ajenos.
+Vite recarga los cambios visuales. Tras editar el backend o aplicar otra
+migración, reinicia `dev:local` para cargar un Prisma recién generado.
 
-API local: `http://127.0.0.1:3001/api/health` y `http://127.0.0.1:3001/api/demo/catalog`.
+Para actualizar, guarda tus cambios locales, ejecuta `git fetch origin`
+y trae el commit de trabajo antes de reiniciar. Ejecuta `npm ci` de nuevo
+cuando cambie el lockfile. Comprueba el inicio de sesión y abre el catálogo
+de tu empresa antes de dar la actualización por validada.
 
 Validación local: `npm run api:check`, `npm run lint` y `npm run build`. GitHub Actions instala desde el lockfile, aplica las migraciones sobre PostgreSQL temporal y verifica el acceso al catálogo a través del proxy de Vite. También comprueba que el catálogo de empresa rechaza peticiones sin sesión.
 
 ## Fase 2 · Acceso de prueba por empresa
 
-Si el puerto 3001 está ocupado, define `API_PORT=3002` en el `.env` local y
-reinicia la API y Vite. Ambos leen el mismo puerto. El proxy ya no requiere
-editar su destino a mano.
-
-Después de traer los cambios, ejecuta `npm run db:generate` y
-`npm run db:migrate` sobre tu base local. Para crear las dos empresas
+Para crear las dos empresas
 ficticias, en PowerShell ejecuta:
 
 ```powershell
