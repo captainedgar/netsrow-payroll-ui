@@ -26,6 +26,8 @@ import {
   usePlatform,
 } from './netsrow-payroll';
 
+const serverTenantAccess = import.meta.env.VITE_NETSROW_TENANT_ACCESS === 'true';
+
 const VALID_PLATFORM_ROUTES: AppRoutePath[] = [
   '/platform',
   '/platform/tenants',
@@ -135,6 +137,10 @@ function PreviewRouterContent() {
         return <AccessRestrictedScreen />;
       }
       return <PlatformWorkspace />;
+    }
+
+    if (serverTenantAccess && (currentRoute === '/login' || currentRoute === '/erp')) {
+      return <TenantAccessScreen locale={locale} route={currentRoute} onNavigate={navigateRoute} />;
     }
 
     // Client ERP Login Route
