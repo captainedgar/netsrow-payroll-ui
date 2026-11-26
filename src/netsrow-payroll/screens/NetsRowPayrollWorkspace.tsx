@@ -41,10 +41,11 @@ type WorkspaceProps = {
   companyName?: string;
   liveCatalog?: React.ReactNode;
   catalogActions?: React.ReactNode;
+  saveCompany?: React.ComponentProps<typeof SettingsScreen>['saveCompany'];
   sessionError?: string;
 };
 
-export const NetsRowPayrollWorkspace: React.FC<WorkspaceProps> = ({ companyName, liveCatalog, catalogActions, sessionError }) => {
+export const NetsRowPayrollWorkspace: React.FC<WorkspaceProps> = ({ companyName, liveCatalog, catalogActions, sessionError, saveCompany }) => {
   const {
     activeScreen,
     setActiveScreen,
@@ -233,12 +234,12 @@ export const NetsRowPayrollWorkspace: React.FC<WorkspaceProps> = ({ companyName,
       case 'company':
       case 'branches':
       case 'users_roles':
-        return <SettingsScreen />;
+        return <SettingsScreen saveCompany={saveCompany} />;
     }
   };
 
   const isCatalog = activeScreen === 'catalog' || activeScreen.startsWith('catalog_');
-  const readOnly = Boolean(companyName) && !isCatalog;
+  const readOnly = Boolean(companyName) && !isCatalog && !(activeScreen === 'company' && saveCompany);
 
   return (
     <div

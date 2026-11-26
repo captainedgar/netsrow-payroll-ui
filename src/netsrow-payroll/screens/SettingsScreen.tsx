@@ -10,9 +10,11 @@ import { StatusBadge } from '../components/StatusBadge';
 import { usePayrollWorkspace } from '../context/PayrollWorkspaceContext';
 import { Branch, ErpUser } from '../types/erp';
 
+type CompanySettingsUpdate = (profile: import('../types/erp').CompanyProfile) => Promise<void>;
+
 type SettingsTab = 'business' | 'company' | 'branches' | 'users_roles';
 
-export const SettingsScreen: React.FC = () => {
+export const SettingsScreen: React.FC<{ saveCompany?: CompanySettingsUpdate }> = ({ saveCompany }) => {
   const {
     activeScreen,
     setActiveScreen,
@@ -41,6 +43,7 @@ export const SettingsScreen: React.FC = () => {
 
   // Company form state
   const [compForm, setCompForm] = useState(erpState.company);
+  const [companyStatus, setCompanyStatus] = useState<'saving' | 'saved' | 'error' | null>(null);
   useEffect(() => setCompForm(erpState.company), [erpState.company]);
 
   // Branch modal
@@ -367,9 +370,20 @@ export const SettingsScreen: React.FC = () => {
       {activeTab === 'company' && (
         <ErpSurfaceCard padding="lg" className="max-w-2xl">
           <form
-            onSubmit={(e) => {
+            onSubmit={async (e) => {
               e.preventDefault();
-              updateCompanyProfile(compForm);
+              if (!saveCompany) {
+                updateCompanyProfile(compForm);
+                return;
+              }
+              if (companyStatus === 'saving') return;
+              setCompanyStatus('saving');
+              try {
+                await saveCompany(compForm);
+                setCompanyStatus('saved');
+              } catch {
+                setCompanyStatus('error');
+              }
             }}
             className="space-y-4"
           >
@@ -383,11 +397,13 @@ export const SettingsScreen: React.FC = () => {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-[var(--nr-text)] mb-1">
+                <label htmlFor="company-profile-name" className="block text-xs font-semibold text-[var(--nr-text)] mb-1">
                   {locale === 'es' ? 'Razón social' : 'Company name'}
                 </label>
                 <input
+                  id="company-profile-name"
                   required
+                  maxLength={120}
                   value={compForm.name}
                   onChange={(e) => setCompForm({ ...compForm, name: e.target.value })}
                   className="nr-focus-ring nr-transition w-full h-9 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-3 text-sm text-[var(--nr-text)]"
@@ -398,7 +414,8 @@ export const SettingsScreen: React.FC = () => {
                   RNC
                 </label>
                 <input
-                  required
+                  required={!saveCompany}
+                  maxLength={24}
                   value={compForm.rnc}
                   onChange={(e) => setCompForm({ ...compForm, rnc: e.target.value })}
                   className="nr-focus-ring nr-transition w-full h-9 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-3 text-sm font-mono-num text-[var(--nr-text)]"
@@ -411,6 +428,7 @@ export const SettingsScreen: React.FC = () => {
                   {locale === 'es' ? 'Código empleador TSS' : 'TSS Employer Code'}
                 </label>
                 <input
+                  maxLength={48}
                   value={compForm.tssEmployerCode}
                   onChange={(e) =>
                     setCompForm({ ...compForm, tssEmployerCode: e.target.value })
@@ -423,6 +441,7 @@ export const SettingsScreen: React.FC = () => {
                   {locale === 'es' ? 'Teléfono' : 'Phone'}
                 </label>
                 <input
+                  maxLength={32}
                   value={compForm.phone}
                   onChange={(e) => setCompForm({ ...compForm, phone: e.target.value })}
                   className="nr-focus-ring nr-transition w-full h-9 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-3 text-sm font-mono-num text-[var(--nr-text)]"
@@ -434,18 +453,22 @@ export const SettingsScreen: React.FC = () => {
                 {locale === 'es' ? 'Dirección fiscal' : 'Fiscal address'}
               </label>
               <input
-                value={compForm.address}
+                maxLength={240}
+                  value={compForm.address}
                 onChange={(e) => setCompForm({ ...compForm, address: e.target.value })}
                 className="nr-focus-ring nr-transition w-full h-9 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-3 text-sm text-[var(--nr-text)]"
               />
             </div>
             <button
               type="submit"
+              disabled={companyStatus === 'saving'}
               className="nr-focus-ring nr-transition inline-flex items-center gap-1.5 h-9 px-4 rounded-lg bg-[var(--nr-primary)] hover:bg-[var(--nr-primary-hover)] text-xs font-semibold text-[var(--nr-primary-fg)]"
             >
               <CheckCircle2 className="w-3.5 h-3.5" />
               <span>{t.common.save}</span>
             </button>
+            {companyStatus === 'saved' && <p role="status">{locale === 'es' ? 'Configuración guardada' : 'Settings saved'}</p>}
+            {companyStatus === 'error' && <p role="alert">{locale === 'es' ? 'No se pudo guardar la configuración.' : 'Could not save settings.'}</p>}
           </form>
         </ErpSurfaceCard>
       )}

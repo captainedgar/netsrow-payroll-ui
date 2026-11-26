@@ -360,7 +360,7 @@ export const SidebarNav: React.FC<{ companyName?: string }> = ({ companyName }) 
               <div className="text-xs font-semibold text-white truncate">
                 {companyName ?? erpState.company.name}
               </div>
-              {!companyName && <div className="font-mono-num text-[10px] text-slate-400 truncate">
+              {erpState.company.rnc && <div className="font-mono-num text-[10px] text-slate-400 truncate">
                 RNC {erpState.company.rnc}
               </div>}
             </div>

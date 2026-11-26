@@ -107,7 +107,7 @@ export const TopBar: React.FC<{ companyName?: string }> = ({ companyName }) => {
             <span className="font-semibold text-[var(--nr-text)] whitespace-nowrap">
               {companyName ?? erpState.company.name}
             </span>
-            {!companyName && <span className="font-mono-num text-[11px] text-[var(--nr-text-secondary)] whitespace-nowrap">
+            {erpState.company.rnc && <span className="font-mono-num text-[11px] text-[var(--nr-text-secondary)] whitespace-nowrap">
               · {erpState.company.rnc}
             </span>}
           </button>

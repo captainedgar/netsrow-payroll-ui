@@ -1,7 +1,7 @@
 import { createHash, randomBytes } from 'node:crypto';
 import {
   BadRequestException, Body, Controller, ForbiddenException, Get, Header, HttpCode, Inject,
-  NotFoundException, Param, Post, Req, Res, UnauthorizedException,
+  NotFoundException, Param, Patch, Post, Req, Res, UnauthorizedException,
 } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import type { Request, Response } from 'express';
@@ -11,6 +11,22 @@ const cookieName = 'netsrow_session';
 const maxAge = 8 * 60 * 60 * 1000;
 const cookie = { httpOnly: true, sameSite: 'strict' as const, secure: process.env.NODE_ENV === 'production', path: '/api/tenant' };
 const dummyHash = `${'0'.repeat(32)}:${'0'.repeat(128)}`;
+
+const companyProfileFields = {
+  name: 120, rnc: 24, tssEmployerCode: 48, address: 240, phone: 32, email: 254,
+} as const;
+
+function readCompanyProfile(body: unknown) {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) throw new BadRequestException();
+  const profile = body as Record<string, unknown>;
+  return Object.fromEntries(Object.entries(companyProfileFields).map(([key, limit]) => {
+    const value = profile[key];
+    if (typeof value !== 'string' || value.length > limit || (key === 'name' && !value.trim())) {
+      throw new BadRequestException('Invalid company profile');
+    }
+    return [key, value.trim()];
+  }));
+}
 
 function sessionDigest(token: string) {
   return createHash('sha256').update(token).digest('hex');
@@ -81,13 +97,29 @@ export class TenantController {
   @Get('catalog')
   @Header('Cache-Control', 'no-store')
   async catalog(@Req() request: Request) {
-    const { company, canManageCatalog } = await this.account(request);
+    const { company, canManageCatalog, canManageCompany } = await this.account(request);
+    const primaryBranch = await this.prisma.branch.findUnique({
+      where: { companyId: company.id },
+      select: { id: true, name: true },
+    });
     const products = await this.prisma.product.findMany({
       where: { companyId: company.id },
       select: { id: true, name: true },
       orderBy: [{ name: 'asc' }, { id: 'asc' }],
     });
-    return { company, products, canManageCatalog };
+    return { company, primaryBranch, products, canManageCatalog, canManageCompany };
+  }
+
+  @Patch('company')
+  @Header('Cache-Control', 'no-store')
+  async updateCompany(@Req() request: Request, @Body() body: unknown) {
+    this.mutation(request);
+    const { companyId, canManageCompany } = await this.account(request);
+    if (!canManageCompany) throw new ForbiddenException();
+    return this.prisma.company.update({
+      where: { id: companyId },
+      data: readCompanyProfile(body),
+    });
   }
 
   @Post('catalog')

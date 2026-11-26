@@ -1,3 +1,4 @@
+import type { CompanyProfile } from './netsrow-payroll/types/erp';
 import { DataTable } from './netsrow-payroll/components/DataTable';
 import { ErpFilterBar, ErpModal } from './netsrow-payroll/components/ErpUiPrimitives';
 import { Plus } from 'lucide-react';
@@ -9,7 +10,13 @@ import { MockPayrollClient } from './netsrow-payroll/services/mockPayrollClient'
 import { useEffect, useState, useMemo, type FormEvent } from 'react';
 
 type Product = { id: string; name: string };
-type Catalog = { company: { name: string }; products: Product[]; canManageCatalog: boolean };
+type Catalog = {
+  company: CompanyProfile & { id: string };
+  primaryBranch: { id: string; name: string } | null;
+  products: Product[];
+  canManageCatalog: boolean;
+  canManageCompany: boolean;
+};
 
 type TenantAccessProps = {
   locale?: 'es' | 'en';
@@ -112,6 +119,18 @@ export function TenantAccessScreen({ locale = 'es', route, onNavigate }: TenantA
     }
   }
 
+  async function saveCompany(profile: CompanyProfile) {
+    const response = await fetch('/api/tenant/company', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'X-Netsrow-Client': 'web' },
+      body: JSON.stringify(profile),
+    });
+    if (response.status === 401) setCatalog(null);
+    if (!response.ok) throw new Error('company');
+    const company = (await response.json()) as Catalog['company'];
+    setCatalog((current) => current && { ...current, company });
+  }
+
   async function logout() {
     setBusy(true);
     setError('');
@@ -146,9 +165,11 @@ export function TenantAccessScreen({ locale = 'es', route, onNavigate }: TenantA
 
   return (
     <PayrollWorkspaceProvider
-      key={catalog.company.name}
+      key={catalog.company.id}
       apiClient={previewClient}
       liveCompanyName={catalog.company.name}
+      liveCompanyProfile={catalog.company}
+      livePrimaryBranch={catalog.primaryBranch}
       enableDemoRoleControl={false}
       initialScreen="overview"
       externalLocale={locale}
@@ -159,6 +180,7 @@ export function TenantAccessScreen({ locale = 'es', route, onNavigate }: TenantA
     >
       <NetsRowPayrollWorkspace
         companyName={catalog.company.name}
+        saveCompany={catalog.canManageCompany ? saveCompany : undefined}
         sessionError={error === 'logout' ? messages.logout : undefined}
         catalogActions={catalog.canManageCatalog && (
           <button type="button" onClick={() => { setError(''); setProductModal(true); }}

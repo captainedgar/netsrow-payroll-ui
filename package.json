@@ -14,7 +14,8 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate deploy",
     "db:seed": "node --import tsx server/seed.ts",
-    "db:seed:tenants": "node --import tsx server/seed-tenants.ts"
+    "db:seed:tenants": "node --import tsx server/seed-tenants.ts",
+    "company:create": "node --import tsx server/provision-company.ts"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

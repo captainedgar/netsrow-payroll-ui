@@ -104,3 +104,25 @@ otra empresa y el formulario de alta quedan fuera de la vista. La API verifica
 el permiso y toma la empresa desde la sesión. Este incremento registra nombre
 e identificador. SKU, precio, existencias, edición y flujos de venta quedan
 pendientes.
+
+## Alta de empresa para el piloto
+
+Con la API detenida, ejecuta `npm run db:generate` y `npm run db:migrate`
+contra tu base local. Desde PowerShell 7 puedes crear una empresa, su
+sucursal principal y su primera cuenta:
+
+```powershell
+$env:NETSROW_OWNER_PASSWORD = Read-Host "Contraseña nueva (mínimo 12 caracteres)" -MaskInput
+try {
+    npm run company:create -- "Comercio Piloto" "piloto@example.test" "Sucursal principal"
+} finally {
+    Remove-Item Env:NETSROW_OWNER_PASSWORD -ErrorAction SilentlyContinue
+}
+```
+
+Levanta la API con `npm run api:dev` y abre el login del ERP. La cuenta
+creada puede guardar el perfil desde **Configuración → Empresa** y dar de
+alta productos desde **Catálogo → Productos**. Se crea una sola sucursal
+principal y el catálogo arranca vacío. Los registros de las empresas
+existentes conservan sus permisos, y el alta repetida con el mismo correo
+se rechaza. El registro público y las invitaciones quedan para otra fase.

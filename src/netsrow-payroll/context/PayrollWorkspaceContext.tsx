@@ -327,6 +327,8 @@ export interface PayrollWorkspaceProviderProps {
   sessionActorName?: string;
   enableDemoRoleControl?: boolean;
   liveCompanyName?: string;
+  liveCompanyProfile?: ErpDemoState['company'];
+  livePrimaryBranch?: { id: string; name: string } | null;
   initialScreen?: ScreenId;
   initialLocale?: Locale;
   initialTheme?: ThemeMode;
@@ -347,6 +349,8 @@ export function PayrollWorkspaceProvider({
   sessionActorName,
   enableDemoRoleControl = true,
   liveCompanyName,
+  liveCompanyProfile,
+  livePrimaryBranch,
   initialScreen = 'overview',
   initialLocale = 'es',
   initialTheme = 'light',
@@ -444,6 +448,16 @@ export function PayrollWorkspaceProvider({
   const effectiveErpState = useMemo<ErpDemoState>(() => {
     const baseEInvoicing =
       erpState.eInvoicing ?? createSeedEInvoicingState(erpState.company);
+    if (liveCompanyProfile) {
+      return {
+        ...erpState,
+        company: liveCompanyProfile,
+        branches: livePrimaryBranch ? [{
+          ...livePrimaryBranch, code: '', city: '', address: '', phone: '', isMain: true, active: true,
+        }] : [],
+        activeBranchId: livePrimaryBranch?.id ?? '',
+      };
+    }
     if (!tenantContext) {
       return {
         ...erpState,
@@ -459,7 +473,7 @@ export function PayrollWorkspaceProvider({
         rnc: tenantContext.rnc,
       },
     };
-  }, [erpState, tenantContext]);
+  }, [erpState, tenantContext, liveCompanyProfile, livePrimaryBranch]);
 
   const clearError = useCallback(() => setErrorMessage(null), []);
   const clearSuccess = useCallback(() => setSuccessMessage(null), []);
@@ -580,10 +594,10 @@ export function PayrollWorkspaceProvider({
 
   const activeBranch = useMemo(
     () =>
-      erpState.branches.find((b) => b.id === erpState.activeBranchId) ??
-      erpState.branches[0] ??
+      effectiveErpState.branches.find((b) => b.id === effectiveErpState.activeBranchId) ??
+      effectiveErpState.branches[0] ??
       null,
-    [erpState.branches, erpState.activeBranchId]
+    [effectiveErpState.branches, effectiveErpState.activeBranchId]
   );
 
   const activePeriod = useMemo(

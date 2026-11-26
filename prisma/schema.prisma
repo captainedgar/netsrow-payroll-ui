@@ -15,8 +15,21 @@ model CatalogSnapshot {
 model Company {
   id       String    @id @default(uuid())
   name     String
+  rnc      String @default("")
+  tssEmployerCode String @default("")
+  address  String @default("")
+  phone    String @default("")
+  email    String @default("")
+  primaryBranch Branch?
   accounts Account[]
   products Product[]
+}
+
+model Branch {
+  id        String @id @default(uuid())
+  name      String
+  companyId String @unique
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 }
 
 model Account {
@@ -24,6 +37,7 @@ model Account {
   email        String    @unique
   password    String
   canManageCatalog Boolean @default(false)
+  canManageCompany Boolean @default(false)
   companyId   String
   company     Company   @relation(fields: [companyId], references: [id])
   sessions    Session[]
