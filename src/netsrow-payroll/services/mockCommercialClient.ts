@@ -1,3 +1,5 @@
+import { validateQuoteContact } from './commercialPricing';
+export { validateQuoteContact } from './commercialPricing';
 import { SEED_COMMERCIAL_CATALOG } from '../data/commercialCatalog';
 import {
   CommercialApiClient,
@@ -17,16 +19,6 @@ function delay(ms: number): Promise<void> {
 
 function clone<T>(val: T): T {
   return JSON.parse(JSON.stringify(val)) as T;
-}
-
-export function validateQuoteContact(value: string): boolean {
-  const trimmed = value.trim();
-  if (!trimmed) return false;
-  if (trimmed.includes('@')) {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed);
-  }
-  const digits = trimmed.replace(/\D/g, '');
-  return digits.length >= 7;
 }
 
 /**

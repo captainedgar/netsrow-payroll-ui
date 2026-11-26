@@ -1,3 +1,4 @@
+import { serverQuoteIntake } from "../services/httpCommercialClient";
 import React, { useState } from 'react';
 import {
   AlertTriangle,
@@ -102,6 +103,20 @@ export const QuoteRequestForm: React.FC<QuoteRequestFormProps> = ({
       // Error surfaced via quoteError banner
     }
   };
+
+  if (lastSubmission && !lastSubmission.isDemoConfirmation) {
+    return (
+      <section role="status" className="rounded-2xl border border-[var(--nr-success-border)] bg-[var(--nr-surface)] p-6 space-y-3">
+        <h3 className="font-display text-xl font-bold">
+          {locale === 'es' ? lastSubmission.messageEs : lastSubmission.messageEn}
+        </h3>
+        <p className="font-mono break-all">{lastSubmission.quoteReference}</p>
+        <button type="button" onClick={handleBack} className="underline nr-focus-ring">
+          {ct.quoteForm.newConfigButton}
+        </button>
+      </section>
+    );
+  }
 
   if (lastSubmission) {
     const waText = formatQuoteSummaryMessage(lastSubmission.payload, catalog);
@@ -240,7 +255,11 @@ export const QuoteRequestForm: React.FC<QuoteRequestFormProps> = ({
             {ct.quoteForm.title}
           </h2>
           <p className="mt-1 text-sm text-[var(--nr-text-secondary)]">
-            {ct.quoteForm.subtitle}
+            {serverQuoteIntake
+              ? (locale === 'es'
+                ? 'Tu solicitud se guarda en el servidor. Los importes del configurador son de muestra y la oferta final queda por cotizar.'
+                : 'Your request is saved on the server. Configurator amounts are examples and the final offer requires a quote.')
+              : ct.quoteForm.subtitle}
           </p>
         </div>
 
@@ -529,7 +548,7 @@ export const QuoteRequestForm: React.FC<QuoteRequestFormProps> = ({
           </div>
         )}
 
-        {/* Demo-only fault state test selector */}
+        {!serverQuoteIntake && (
         <div className="rounded-xl border border-[var(--nr-warning-border)] bg-[var(--nr-warning-bg)] p-3 flex flex-wrap items-center justify-between gap-2">
           <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--nr-warning)]">
             <ShieldAlert className="w-4 h-4 shrink-0" />
@@ -544,6 +563,8 @@ export const QuoteRequestForm: React.FC<QuoteRequestFormProps> = ({
             <option value="SERVER_ERROR">{ct.quoteForm.simFaultError}</option>
           </select>
         </div>
+
+        )}
 
         <div className="flex justify-end pt-2">
           <button

@@ -1,3 +1,4 @@
+import { HttpCommercialClient, serverQuoteIntake } from "./netsrow-payroll/services/httpCommercialClient";
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -66,7 +67,7 @@ function PreviewRouterContent() {
   } = usePlatform();
 
   const payrollClient = useMemo(() => new MockPayrollClient(140), []);
-  const commercialClient = useMemo(() => new MockCommercialClient(120), []);
+  const commercialClient = useMemo(() => serverQuoteIntake ? new HttpCommercialClient() : new MockCommercialClient(120), []);
 
   useEffect(() => {
     if (typeof document !== 'undefined') {

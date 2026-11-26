@@ -4,6 +4,7 @@ import { Controller, Get, Inject, Module, ServiceUnavailableException } from '@n
 import { NestFactory } from '@nestjs/core';
 import { PrismaClient } from '@prisma/client';
 import { TenantController } from './tenant.controller';
+import { CommercialController } from './commercial.controller';
 
 @Controller('api')
 class FoundationController {
@@ -32,7 +33,7 @@ class FoundationController {
 const prisma = new PrismaClient();
 
 @Module({
-  controllers: [FoundationController, TenantController],
+  controllers: [FoundationController, TenantController, CommercialController],
   providers: [{ provide: PrismaClient, useValue: prisma }],
 })
 class FoundationModule {}

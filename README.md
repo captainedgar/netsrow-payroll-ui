@@ -62,3 +62,18 @@ Usa la rama de integración para trabajar con la UI y la API juntas. Antes de in
 | `npm run db:seed` y `npm run db:seed:tenants` | Datos ficticios para bases locales o de pruebas |
 
 El build web todavía incluye pantallas comerciales y operativas de demostración. Antes de publicar, vincula la oferta al catálogo aprobado, conecta el acceso definitivo y revisa qué rutas, cuentas y datos de demostración quedan excluidos del despliegue. Conserva las credenciales de Compose exclusivamente para desarrollo local.
+
+## Fase 2 · Recepción comercial en pruebas
+
+El configurador conserva los importes ilustrativos. Al habilitar la recepción, el formulario avisa que los importes finales quedan por cotizar. PostgreSQL conserva la selección, el contacto, la versión y la fecha. El servidor valida los identificadores contra el catálogo y recibe únicamente la solicitud. La confirmación muestra una referencia `COT-…` y no incluye importes.
+
+Aplica `npm run db:generate` y `npm run db:migrate`. Para probar con datos ficticios, agrega a `.env` y reinicia Vite y la API:
+
+```dotenv
+NETSROW_COMMERCIAL_INTAKE=true
+VITE_NETSROW_COMMERCIAL_INTAKE=true
+```
+
+Completa el configurador de planes y envía una solicitud. Consulta `CommercialQuoteRequest` desde Prisma Studio (`npx prisma studio`) en tu máquina y con una base de pruebas. No hay un listado público ni se envían avisos. Con las variables omitidas o en `false`, el configurador sigue en modo demo.
+
+Para publicar, aprueba en DOP y con vigencia la tarifa de cada plan y módulo, la unidad de cobro, los cupos y excedentes de e-CF, el precio total y las condiciones del equipo, la instalación, la capacitación y los impuestos. Faltan el catálogo público con esas tarifas y la bandeja comercial con acceso restringido. Antes de habilitar recepción pública, define el aviso de privacidad, la retención, los controles antiabuso y el manejo de reintentos.

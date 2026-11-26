@@ -235,3 +235,13 @@ export function computeQuoteBreakdown(
     billedAddons,
   };
 }
+
+export function validateQuoteContact(value: string): boolean {
+  const trimmed = value.trim();
+  if (!trimmed) return false;
+  if (trimmed.includes('@')) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed);
+  }
+  const digits = trimmed.replace(/\D/g, '');
+  return digits.length >= 7;
+}

@@ -45,3 +45,14 @@ model Product {
 
   @@index([companyId])
 }
+
+model CommercialQuoteRequest {
+  id             String   @id @default(uuid())
+  createdAt      DateTime @default(now())
+  locale         String
+  catalogVersion String
+  selection      Json
+  contact        Json
+
+  @@index([createdAt])
+}
