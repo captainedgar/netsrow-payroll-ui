@@ -80,16 +80,14 @@ Para publicar, aprueba en DOP y con vigencia la tarifa de cada plan y módulo, l
 
 ## Fase 3 · Piloto de acceso multiempresa
 
-Para conectar el acceso principal al servidor, agrega `VITE_NETSROW_TENANT_ACCESS=true`
-a `.env` y reinicia Vite. Con esta opción, `/login` usa la cookie de la API y
-`/erp` presenta el catálogo real de la empresa en solo lectura. Al cerrar
-sesión se invalida la cookie en el servidor. Las áreas de plataforma,
-registro demo y gestión operativa continúan en demostración.
+El acceso principal `/login` usa la cookie de la API y `/erp` presenta el
+catálogo real de la empresa. Al cerrar sesión se invalida la cookie en el
+servidor. Para usar el portal local, ejecuta la API y Vite desde la misma
+carpeta. Las áreas de plataforma y registro siguen en demostración.
 
 En una base local de pruebas puedes cargar las dos cuentas ficticias con
 `db:seed:tenants` como se indica arriba. Abre `/login`, entra con cada cuenta
-y comprueba que los productos pertenecen a su empresa. La configuración
-predeterminada conserva el recorrido demo. Antes de habilitar el acceso público
+y comprueba que los productos pertenecen a su empresa. Antes de habilitar el acceso público
 quedan pendientes altas, recuperación, roles, módulos, controles de abuso y
 el acceso de Superadmin.
 
@@ -100,7 +98,7 @@ En una base local de pruebas, detén la API, ejecuta `npm run db:generate` y
 de prueba indicado arriba. El seed autoriza el alta para `test-a@example.test`.
 La cuenta `test-b@example.test` conserva el acceso de solo lectura.
 
-Con `VITE_NETSROW_TENANT_ACCESS=true`, inicia sesión como Comercio A, registra
+Inicia sesión como Comercio A, registra
 un producto y recarga. Al iniciar sesión como Comercio B, el producto de la
 otra empresa y el formulario de alta quedan fuera de la vista. La API verifica
 el permiso y toma la empresa desde la sesión. Este incremento registra nombre

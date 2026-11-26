@@ -13,20 +13,14 @@ import {
   CommercialProvider,
   LandingScreen,
   MockCommercialClient,
-  MockPayrollClient,
   MockPlatformClient,
-  NetsRowPayrollWorkspace,
-  PayrollWorkspaceProvider,
   PlansConfiguratorScreen,
   PlatformLoginScreen,
   PlatformProvider,
   PlatformWorkspace,
   RegisterDemoScreen,
-  TenantLoginScreen,
   usePlatform,
 } from './netsrow-payroll';
-
-const serverTenantAccess = import.meta.env.VITE_NETSROW_TENANT_ACCESS === 'true';
 
 const VALID_PLATFORM_ROUTES: AppRoutePath[] = [
   '/platform',
@@ -57,18 +51,14 @@ function parseAppRoute(pathname: string): AppRoutePath {
 function PreviewRouterContent() {
   const {
     authSession,
-    activeTenant,
     currentRoute,
     navigateRoute,
     locale,
     setLocale,
     theme,
-    setTheme,
     toggleTheme,
-    logoutSession,
   } = usePlatform();
 
-  const payrollClient = useMemo(() => new MockPayrollClient(140), []);
   const commercialClient = useMemo(() => serverQuoteIntake ? new HttpCommercialClient() : new MockCommercialClient(120), []);
 
   useEffect(() => {
@@ -139,41 +129,8 @@ function PreviewRouterContent() {
       return <PlatformWorkspace />;
     }
 
-    if (serverTenantAccess && (currentRoute === '/login' || currentRoute === '/erp')) {
+    if (currentRoute === '/login' || currentRoute === '/erp') {
       return <TenantAccessScreen locale={locale} route={currentRoute} onNavigate={navigateRoute} />;
-    }
-
-    // Client ERP Login Route
-    if (currentRoute === '/login') {
-      return <TenantLoginScreen />;
-    }
-
-    // Authenticated Client ERP Workspace (/erp)
-    if (currentRoute === '/erp') {
-      if (!authSession) {
-        return <TenantLoginScreen />;
-      }
-      if (authSession.accountType === 'PLATFORM_OPERATOR') {
-        return <PlatformWorkspace />;
-      }
-      return (
-        <PayrollWorkspaceProvider
-          key={activeTenant?.id ?? authSession.userId}
-          apiClient={payrollClient}
-          enableDemoRoleControl={true}
-          initialScreen="overview"
-          externalLocale={locale}
-          onLocaleChange={setLocale}
-          externalTheme={theme}
-          onThemeChange={setTheme}
-          tenantContext={activeTenant}
-          sessionActorName={authSession.fullName}
-          onLogout={() => void logoutSession('/login')}
-          onNavigateToPlatformLogin={() => navigateRoute('/platform/login')}
-        >
-          <NetsRowPayrollWorkspace />
-        </PayrollWorkspaceProvider>
-      );
     }
 
     return <LandingScreen />;
