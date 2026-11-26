@@ -12,9 +12,17 @@ import { Branch, ErpUser } from '../types/erp';
 
 type CompanySettingsUpdate = (profile: import('../types/erp').CompanyProfile) => Promise<void>;
 
+type CompanyAccount = {
+  id: string;
+  email: string;
+  fullName: string;
+  canManageCompany: boolean;
+  canManageCatalog: boolean;
+};
+
 type SettingsTab = 'business' | 'company' | 'branches' | 'users_roles';
 
-export const SettingsScreen: React.FC<{ saveCompany?: CompanySettingsUpdate }> = ({ saveCompany }) => {
+export const SettingsScreen: React.FC<{ saveCompany?: CompanySettingsUpdate; live?: boolean }> = ({ saveCompany, live }) => {
   const {
     activeScreen,
     setActiveScreen,
@@ -63,6 +71,43 @@ export const SettingsScreen: React.FC<{ saveCompany?: CompanySettingsUpdate }> =
   const [uEmail, setUEmail] = useState('');
   const [uRoleId, setURoleId] = useState('');
   const [uBranchId, setUBranchId] = useState('');
+  const [uPassword, setUPassword] = useState('');
+  const [companyUsers, setCompanyUsers] = useState<CompanyAccount[]>([]);
+  const canManageUsers = Boolean(saveCompany);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [usersError, setUsersError] = useState(false);
+  const [userSaveError, setUserSaveError] = useState<'duplicate' | 'invalid' | 'unavailable' | null>(null);
+
+  useEffect(() => {
+    if (!live || !canManageUsers || activeTab !== 'users_roles') return;
+    const controller = new AbortController();
+    setUsersLoading(true);
+    setUsersError(false);
+    fetch('/api/tenant/users', { signal: controller.signal })
+      .then(async (response) => {
+        if (!response.ok) throw new Error('users');
+        const users = await response.json() as CompanyAccount[];
+        if (!controller.signal.aborted) setCompanyUsers(users);
+      })
+      .catch(() => { if (!controller.signal.aborted) setUsersError(true); })
+      .finally(() => { if (!controller.signal.aborted) setUsersLoading(false); });
+    return () => controller.abort();
+  }, [live, canManageUsers, activeTab]);
+
+  const liveRoles = {
+    ADMIN: locale === 'es' ? 'Administrador de empresa' : 'Company administrator',
+    CATALOG: locale === 'es' ? 'Gestión de catálogo' : 'Catalog manager',
+    READ_ONLY: locale === 'es' ? 'Solo lectura' : 'Read only',
+  };
+
+  const userRows = live ? companyUsers.map((user): ErpUser => ({
+    id: user.id,
+    email: user.email,
+    fullName: user.fullName || user.email,
+    roleId: user.canManageCompany ? 'ADMIN' : user.canManageCatalog ? 'CATALOG' : 'READ_ONLY',
+    branchId: activeBranch?.id ?? '',
+    active: true,
+  })) : erpState.users;
 
   const roleMap = useMemo(
     () => new Map(erpState.roles.map((r) => [r.id, r])),
@@ -108,7 +153,9 @@ export const SettingsScreen: React.FC<{ saveCompany?: CompanySettingsUpdate }> =
     setEditUser(usr ?? null);
     setUName(usr?.fullName ?? '');
     setUEmail(usr?.email ?? '');
-    setURoleId(usr?.roleId ?? erpState.roles[0]?.id ?? '');
+    setURoleId(live ? 'READ_ONLY' : (usr?.roleId ?? erpState.roles[0]?.id ?? ''));
+    setUPassword('');
+    setUserSaveError(null);
     setUBranchId(usr?.branchId ?? erpState.branches[0]?.id ?? '');
     setUsrModalOpen(true);
   };
@@ -118,6 +165,24 @@ export const SettingsScreen: React.FC<{ saveCompany?: CompanySettingsUpdate }> =
     if (!uName.trim() || !uEmail.trim()) return;
     setIsSaving(true);
     try {
+      if (live) {
+        if (!saveCompany) return;
+        setUserSaveError(null);
+        const response = await fetch('/api/tenant/users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Netsrow-Client': 'web' },
+          body: JSON.stringify({ fullName: uName, email: uEmail, role: uRoleId, password: uPassword }),
+        });
+        if (!response.ok) {
+          setUserSaveError(response.status === 409 ? 'duplicate' : response.status === 400 ? 'invalid' : 'unavailable');
+          return;
+        }
+        const user = await response.json() as CompanyAccount;
+        setCompanyUsers((current) => [...current, user]);
+        setUPassword('');
+        setUsrModalOpen(false);
+        return;
+      }
       await upsertErpUser({
         id: editUser?.id ?? `usr-${Date.now()}`,
         fullName: uName.trim(),
@@ -127,6 +192,9 @@ export const SettingsScreen: React.FC<{ saveCompany?: CompanySettingsUpdate }> =
         active: editUser?.active ?? true,
       });
       setUsrModalOpen(false);
+    } catch (error) {
+      if (!live) throw error;
+      setUserSaveError('unavailable');
     } finally {
       setIsSaving(false);
     }
@@ -207,8 +275,8 @@ export const SettingsScreen: React.FC<{ saveCompany?: CompanySettingsUpdate }> =
         const r = roleMap.get(u.roleId);
         return (
           <StatusBadge
-            label={r ? (locale === 'es' ? r.nameEs : r.nameEn) : u.roleId}
-            tone={u.roleId === 'role-admin' ? 'emerald' : 'neutral'}
+            label={live ? liveRoles[u.roleId as keyof typeof liveRoles] : r ? (locale === 'es' ? r.nameEs : r.nameEn) : u.roleId}
+            tone={u.roleId === 'role-admin' || u.roleId === 'ADMIN' ? 'emerald' : 'neutral'}
           />
         );
       },
@@ -245,10 +313,10 @@ export const SettingsScreen: React.FC<{ saveCompany?: CompanySettingsUpdate }> =
         title={t.navigation.settingsSection}
         subtitle={
           locale === 'es'
-            ? 'Configura Negocio, Empresa, Sucursales (reflejadas de inmediato en la cabecera) y Usuarios/Roles de demostración.'
-            : 'Configure Business, Company, Branches (immediately reflected in header), and Demo Users & Roles.'
+            ? 'Configura Negocio, Empresa, Sucursales y Usuarios y Roles.'
+            : 'Configure Business, Company, Branches, and Users & Roles.'
         }
-        badge={<StatusBadge label={t.topBar.demoOnlyTag} tone="amber" />}
+        badge={!live && <StatusBadge label={t.topBar.demoOnlyTag} tone="amber" />}
       />
 
       <div className="flex flex-wrap items-center gap-1 border-b border-[var(--nr-border)]">
@@ -508,11 +576,12 @@ export const SettingsScreen: React.FC<{ saveCompany?: CompanySettingsUpdate }> =
           <div className="flex items-center justify-between gap-3">
             <h2 className="font-display text-sm font-bold text-[var(--nr-text)] flex items-center gap-2">
               <UserCog className="w-4 h-4 text-[var(--nr-primary)]" />
-              <span>{locale === 'es' ? 'Usuarios de demostración' : 'Demo users'}</span>
+              <span>{locale === 'es' ? 'Usuarios de la empresa' : 'Company users'}</span>
             </h2>
             <button
               type="button"
               onClick={() => openUserModal()}
+              disabled={live && (!saveCompany || usersLoading || usersError)}
               className="nr-focus-ring nr-transition inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-[var(--nr-primary)] hover:bg-[var(--nr-primary-hover)] text-xs font-semibold text-[var(--nr-primary-fg)]"
             >
               <Plus className="w-3.5 h-3.5" />
@@ -521,23 +590,33 @@ export const SettingsScreen: React.FC<{ saveCompany?: CompanySettingsUpdate }> =
           </div>
 
           <DataTable
-            columns={userCols}
-            rows={erpState.users}
+            columns={live ? userCols.filter((column) => column.key !== 'actions') : userCols}
+            rows={userRows}
+            isLoading={usersLoading}
             getRowKey={(u) => u.id}
             emptyMessage={t.common.noResults}
           />
 
+          {usersError && <p role="alert">{locale === 'es' ? 'No se pudieron cargar los usuarios.' : 'Could not load company users.'}</p>}
           <ErpSurfaceCard padding="md" className="space-y-3">
             <div className="flex items-center justify-between gap-2">
               <h3 className="font-display text-sm font-bold text-[var(--nr-text)]">
                 {locale === 'es'
-                  ? 'Matriz de Roles y Alcance ERP (Contrato API vs Solo demo)'
-                  : 'Role Matrix & ERP Integration Boundary'}
+                  ? 'Matriz de roles y permisos'
+                  : 'Role and permission matrix'}
               </h3>
-              <StatusBadge label={t.topBar.demoOnlyTag} tone="amber" />
+              {!live && <StatusBadge label={t.topBar.demoOnlyTag} tone="amber" />}
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {erpState.roles.map((r) => (
+              {live && Object.entries(liveRoles).map(([id, label]) => (
+                <div key={id} className="rounded-xl border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] p-3.5 space-y-2 text-xs">
+                  <div className="font-bold text-[var(--nr-text)]">{label}</div>
+                  <p className="text-[var(--nr-text-secondary)]">{locale === 'es'
+                    ? ({ ADMIN: 'Configura la empresa y administra usuarios y productos.', CATALOG: 'Consulta y registra productos.', READ_ONLY: 'Consulta el catálogo.' }[id])
+                    : ({ ADMIN: 'Manages company settings, users and products.', CATALOG: 'Views and creates products.', READ_ONLY: 'Views the catalog.' }[id])}</p>
+                </div>
+              ))}
+              {!live && erpState.roles.map((r) => (
                 <div
                   key={r.id}
                   className="rounded-xl border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] p-3.5 space-y-2 text-xs"
@@ -686,8 +765,8 @@ export const SettingsScreen: React.FC<{ saveCompany?: CompanySettingsUpdate }> =
               ? 'Editar usuario (Solo demo)'
               : 'Edit user (Demo only)'
             : locale === 'es'
-              ? 'Nuevo usuario (Solo demo)'
-              : 'New user (Demo only)'
+              ? 'Nuevo usuario'
+              : 'New user'
         }
         maxWidthClass="max-w-md"
         closeLabel={t.common.close}
@@ -713,40 +792,65 @@ export const SettingsScreen: React.FC<{ saveCompany?: CompanySettingsUpdate }> =
         }
       >
         <form id="nr-user-form" onSubmit={saveUser} className="space-y-3">
+          {userSaveError && <p role="alert" className="text-sm text-[var(--nr-error)]">
+            {userSaveError === 'duplicate'
+              ? (locale === 'es' ? 'Ese correo no está disponible.' : 'That email is unavailable.')
+              : userSaveError === 'invalid'
+                ? (locale === 'es' ? 'Verifica el nombre, correo y contraseña.' : 'Check the name, email and password.')
+                : (locale === 'es' ? 'No se pudo guardar el usuario.' : 'Could not save the user.')}
+          </p>}
           <div>
-            <label className="block text-xs font-semibold text-[var(--nr-text)] mb-1">
+            <label htmlFor="nr-company-user-name" className="block text-xs font-semibold text-[var(--nr-text)] mb-1">
               {locale === 'es' ? 'Nombre completo' : 'Full name'}
             </label>
             <input
               required
+              maxLength={120}
+              id="nr-company-user-name"
               value={uName}
               onChange={(e) => setUName(e.target.value)}
               className="nr-focus-ring nr-transition w-full h-9 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-2.5 text-sm text-[var(--nr-text)]"
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-[var(--nr-text)] mb-1">
+            <label htmlFor="nr-company-user-email" className="block text-xs font-semibold text-[var(--nr-text)] mb-1">
               Email
             </label>
             <input
               type="email"
               required
+              maxLength={254}
+              id="nr-company-user-email"
               value={uEmail}
               onChange={(e) => setUEmail(e.target.value)}
               className="nr-focus-ring nr-transition w-full h-9 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-2.5 text-sm text-[var(--nr-text)]"
             />
           </div>
+          {live && (
+            <label className="grid gap-1 text-xs font-semibold">
+              {locale === 'es' ? 'Contraseña inicial' : 'Initial password'}
+              <input type="password" autoComplete="new-password" required minLength={12} maxLength={256}
+                value={uPassword} onChange={(event) => setUPassword(event.target.value)}
+                className="nr-focus-ring w-full h-9 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-2.5 text-sm" />
+            </label>
+          )}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-[var(--nr-text)] mb-1">
+              <label htmlFor="nr-company-user-role" className="block text-xs font-semibold text-[var(--nr-text)] mb-1">
                 {locale === 'es' ? 'Rol' : 'Role'}
               </label>
               <select
-                value={uRoleId}
+                id="nr-company-user-role"
+              value={uRoleId}
                 onChange={(e) => setURoleId(e.target.value)}
                 className="nr-focus-ring nr-transition w-full h-9 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-2 text-xs text-[var(--nr-text)]"
               >
-                {erpState.roles.map((r) => (
+                {live ? (
+                  <>
+                    <option value="READ_ONLY">{liveRoles.READ_ONLY}</option>
+                    <option value="CATALOG">{liveRoles.CATALOG}</option>
+                  </>
+                ) : erpState.roles.map((r) => (
                   <option key={r.id} value={r.id}>
                     {locale === 'es' ? r.nameEs : r.nameEn}
                   </option>

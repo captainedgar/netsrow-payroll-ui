@@ -234,12 +234,12 @@ export const NetsRowPayrollWorkspace: React.FC<WorkspaceProps> = ({ companyName,
       case 'company':
       case 'branches':
       case 'users_roles':
-        return <SettingsScreen saveCompany={saveCompany} />;
+        return <SettingsScreen saveCompany={saveCompany} live={Boolean(companyName)} />;
     }
   };
 
   const isCatalog = activeScreen === 'catalog' || activeScreen.startsWith('catalog_');
-  const readOnly = Boolean(companyName) && !isCatalog && !(activeScreen === 'company' && saveCompany);
+  const readOnly = Boolean(companyName) && !isCatalog && !((activeScreen === 'company' || activeScreen === 'users_roles') && saveCompany);
 
   return (
     <div

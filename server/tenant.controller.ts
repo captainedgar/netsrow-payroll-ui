@@ -1,11 +1,15 @@
 import { createHash, randomBytes } from 'node:crypto';
 import {
-  BadRequestException, Body, Controller, ForbiddenException, Get, Header, HttpCode, Inject,
+  BadRequestException, Body, ConflictException, Controller, ForbiddenException, Get, Header, HttpCode, Inject,
   NotFoundException, Param, Patch, Post, Req, Res, UnauthorizedException,
 } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import type { Request, Response } from 'express';
-import { verifyPassword } from './password';
+import { hashPassword, verifyPassword } from './password';
+
+const companyAccountFields = {
+  id: true, email: true, fullName: true, canManageCompany: true, canManageCatalog: true,
+} as const;
 
 const cookieName = 'netsrow_session';
 const maxAge = 8 * 60 * 60 * 1000;
@@ -120,6 +124,53 @@ export class TenantController {
       where: { id: companyId },
       data: readCompanyProfile(body),
     });
+  }
+
+  @Get('users')
+  @Header('Cache-Control', 'no-store')
+  async listUsers(@Req() request: Request) {
+    const { companyId, canManageCompany } = await this.account(request);
+    if (!canManageCompany) throw new ForbiddenException();
+    return this.prisma.account.findMany({
+      where: { companyId },
+      select: companyAccountFields,
+      orderBy: { email: 'asc' },
+    });
+  }
+
+  @Post('users')
+  @Header('Cache-Control', 'no-store')
+  async createUser(@Req() request: Request, @Body() body: unknown) {
+    this.mutation(request);
+    const { companyId, canManageCompany } = await this.account(request);
+    if (!canManageCompany) throw new ForbiddenException();
+
+    const input = body as { email?: unknown; fullName?: unknown; password?: unknown; role?: unknown } | null;
+    if (typeof input?.email !== 'string' || input.email.length > 254 ||
+        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.email.trim()) ||
+        typeof input.fullName !== 'string' || !input.fullName.trim() || input.fullName.length > 120 ||
+        typeof input.password !== 'string' || input.password.trim().length < 12 || input.password.length > 256 ||
+        (input.role !== 'CATALOG' && input.role !== 'READ_ONLY')) {
+      throw new BadRequestException('Invalid user details');
+    }
+
+    try {
+      return await this.prisma.account.create({
+        data: {
+          companyId,
+          email: input.email.trim().toLowerCase(),
+          fullName: input.fullName.trim(),
+          password: await hashPassword(input.password),
+          canManageCatalog: input.role === 'CATALOG',
+        },
+        select: companyAccountFields,
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        throw new ConflictException('Email unavailable');
+      }
+      throw error;
+    }
   }
 
   @Post('catalog')
