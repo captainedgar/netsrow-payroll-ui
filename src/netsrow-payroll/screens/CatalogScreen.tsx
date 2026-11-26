@@ -20,7 +20,7 @@ import {
 
 type CatalogSection = 'products' | 'categories' | 'brands' | 'units' | 'pricelists';
 
-export const CatalogScreen: React.FC = () => {
+export const CatalogScreen: React.FC<{ live?: boolean; productContent?: React.ReactNode; productActions?: React.ReactNode }> = ({ live, productContent, productActions }) => {
   const {
     activeScreen,
     setActiveScreen,
@@ -498,8 +498,8 @@ export const CatalogScreen: React.FC = () => {
             ? 'Administra las 5 secciones del catálogo comercial de NetsRow ERP.'
             : 'Manage all 5 commercial catalog sections in NetsRow ERP.'
         }
-        badge={<StatusBadge label={t.topBar.demoOnlyTag} tone="amber" />}
-        actions={
+        badge={!live && <StatusBadge label={t.topBar.demoOnlyTag} tone="amber" />}
+        actions={live ? (activeSection === 'products' && productActions) : (
           <button
             type="button"
             onClick={activeSection === 'products' ? openNewProduct : openNewAux}
@@ -514,7 +514,7 @@ export const CatalogScreen: React.FC = () => {
                 : t.common.add}
             </span>
           </button>
-        }
+        )}
       />
 
       {/* 5 Sections Navigation Tabs */}
@@ -543,7 +543,7 @@ export const CatalogScreen: React.FC = () => {
         ))}
       </div>
 
-      {activeSection === 'products' && (
+      {activeSection === 'products' && (live ? productContent : (
         <>
           <ErpFilterBar
             searchValue={query}
@@ -603,6 +603,12 @@ export const CatalogScreen: React.FC = () => {
             />
           )}
         </>
+      ))}
+
+      {live && activeSection !== 'products' && (
+        <p className="text-sm text-[var(--nr-text-secondary)]">
+          {locale === 'es' ? 'Administración pendiente de conexión.' : 'Management is awaiting integration.'}
+        </p>
       )}
 
       {activeSection === 'categories' && (

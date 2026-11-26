@@ -7,6 +7,7 @@ import React, {
   useState,
 } from 'react';
 import { createSeedEInvoicingState } from '../data/eInvoicingSeed';
+import { createEmptyErpState } from '../data/emptyErpState';
 import { createSeedErpState } from '../data/erpSeed';
 import { getDemoPermissions, TRANSLATIONS, Translations } from '../i18n/translations';
 import {
@@ -325,7 +326,7 @@ export interface PayrollWorkspaceProviderProps {
   sessionPermissions?: NetsRowPermissions;
   sessionActorName?: string;
   enableDemoRoleControl?: boolean;
-  loadPreviewData?: boolean;
+  liveCompanyName?: string;
   initialScreen?: ScreenId;
   initialLocale?: Locale;
   initialTheme?: ThemeMode;
@@ -345,7 +346,7 @@ export function PayrollWorkspaceProvider({
   sessionPermissions,
   sessionActorName,
   enableDemoRoleControl = true,
-  loadPreviewData = true,
+  liveCompanyName,
   initialScreen = 'overview',
   initialLocale = 'es',
   initialTheme = 'light',
@@ -361,9 +362,9 @@ export function PayrollWorkspaceProvider({
   const [periods, setPeriods] = useState<PayrollPeriod[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [novelties, setNovelties] = useState<PayrollNovelty[]>([]);
-  const [erpState, setErpState] = useState<ErpDemoState>(() => createSeedErpState());
+  const [erpState, setErpState] = useState<ErpDemoState>(() => liveCompanyName ? createEmptyErpState(liveCompanyName) : createSeedErpState());
 
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(!liveCompanyName);
   const [isMutating, setIsMutating] = useState<boolean>(false);
   const [actionType, setActionType] =
     useState<PayrollWorkspaceContextValue['actionType']>('idle');
@@ -409,7 +410,11 @@ export function PayrollWorkspaceProvider({
   const [isMobileNavOpen, setIsMobileNavOpen] = useState<boolean>(false);
   const [isMobileBreakdownOpen, setIsMobileBreakdownOpen] = useState<boolean>(false);
 
-  const t = TRANSLATIONS[locale];
+  const translations = TRANSLATIONS[locale];
+  const t = liveCompanyName ? {
+    ...translations,
+    topBar: { ...translations.topBar, demoOnlyTag: locale === 'es' ? 'Solo consulta' : 'Read only' },
+  } : translations;
 
   const permissions = useMemo<NetsRowPermissions>(() => {
     if (sessionPermissions) return sessionPermissions;
@@ -464,7 +469,7 @@ export function PayrollWorkspaceProvider({
   }, []);
 
   useEffect(() => {
-    if (!loadPreviewData) return;
+    if (liveCompanyName) return;
     let cancelled = false;
     setIsLoading(true);
     apiClient
@@ -502,7 +507,7 @@ export function PayrollWorkspaceProvider({
     return () => {
       cancelled = true;
     };
-  }, [apiClient, loadPreviewData]);
+  }, [apiClient, liveCompanyName]);
 
   const persistErp = useCallback(
     async (updater: (prev: ErpDemoState) => ErpDemoState): Promise<ErpDemoState> => {

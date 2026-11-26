@@ -40,10 +40,11 @@ import { SettingsScreen } from './SettingsScreen';
 type WorkspaceProps = {
   companyName?: string;
   liveCatalog?: React.ReactNode;
+  catalogActions?: React.ReactNode;
   sessionError?: string;
 };
 
-export const NetsRowPayrollWorkspace: React.FC<WorkspaceProps> = ({ companyName, liveCatalog, sessionError }) => {
+export const NetsRowPayrollWorkspace: React.FC<WorkspaceProps> = ({ companyName, liveCatalog, catalogActions, sessionError }) => {
   const {
     activeScreen,
     setActiveScreen,
@@ -88,20 +89,6 @@ export const NetsRowPayrollWorkspace: React.FC<WorkspaceProps> = ({ companyName,
         : null;
 
   const renderScreen = () => {
-    if (companyName) {
-      if (['overview', 'catalog', 'catalog_products'].includes(activeScreen)) return liveCatalog;
-      return (
-        <div className="rounded-xl border border-[var(--nr-border)] bg-[var(--nr-surface)] p-6 space-y-4">
-          <h1 className="font-display text-lg font-bold">
-            {locale === 'es' ? 'Sección aún no disponible' : 'Section not available yet'}
-          </h1>
-          <button type="button" onClick={() => setActiveScreen('catalog_products')}
-            className="nr-focus-ring text-[var(--nr-primary)] underline rounded">
-            {locale === 'es' ? 'Ir al catálogo' : 'Go to catalog'}
-          </button>
-        </div>
-      );
-    }
     if (tenantStatus === 'SUSPENDED') {
       return (
         <div className="max-w-lg mx-auto my-12 rounded-2xl border border-[var(--nr-error-border)] bg-[var(--nr-surface)] p-6 sm:p-8 text-center space-y-4">
@@ -185,7 +172,7 @@ export const NetsRowPayrollWorkspace: React.FC<WorkspaceProps> = ({ companyName,
 
     switch (activeScreen) {
       case 'overview':
-        return <OverviewScreen />;
+        return <OverviewScreen live={Boolean(companyName)} />;
       case 'pos':
         return <PosScreen />;
       case 'sales_ar':
@@ -215,7 +202,7 @@ export const NetsRowPayrollWorkspace: React.FC<WorkspaceProps> = ({ companyName,
       case 'catalog_brands':
       case 'catalog_units':
       case 'catalog_pricelists':
-        return <CatalogScreen />;
+        return <CatalogScreen live={Boolean(companyName)} productContent={liveCatalog} productActions={catalogActions} />;
       case 'purchases_ap':
         return <PurchasesScreen />;
       case 'internal_docs':
@@ -249,6 +236,9 @@ export const NetsRowPayrollWorkspace: React.FC<WorkspaceProps> = ({ companyName,
         return <SettingsScreen />;
     }
   };
+
+  const isCatalog = activeScreen === 'catalog' || activeScreen.startsWith('catalog_');
+  const readOnly = Boolean(companyName) && !isCatalog;
 
   return (
     <div
@@ -306,7 +296,16 @@ export const NetsRowPayrollWorkspace: React.FC<WorkspaceProps> = ({ companyName,
               </div>
             )}
 
-            {renderScreen()}
+            {readOnly ? (
+              <>
+                <p className="mb-4 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface)] px-4 py-3 text-xs text-[var(--nr-text-secondary)]">
+                  {locale === 'es'
+                    ? 'Vista de consulta. Las operaciones de esta sección están pendientes de conexión.'
+                    : 'Read-only view. Operations in this section are awaiting integration.'}
+                </p>
+                <fieldset disabled className="min-w-0">{renderScreen()}</fieldset>
+              </>
+            ) : renderScreen()}
           </main>
 
           {/* Persistent «Desglose de nómina» inspector on active Payroll routes when PAYROLL is contracted */}

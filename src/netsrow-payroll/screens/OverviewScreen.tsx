@@ -24,7 +24,7 @@ import { StatusBadge } from '../components/StatusBadge';
 import { usePayrollWorkspace } from '../context/PayrollWorkspaceContext';
 import { ActivityStatusType, DashboardIncidence } from '../types/erp';
 
-export const OverviewScreen: React.FC = () => {
+export const OverviewScreen: React.FC<{ live?: boolean }> = ({ live = false }) => {
   const {
     periods,
     activePeriodId,
@@ -65,7 +65,7 @@ export const OverviewScreen: React.FC = () => {
     const livePeriodSales = erpState.sales
       .filter((s) => s.status === 'COMPLETED' && s.date.startsWith(periodCode))
       .reduce((acc, s) => acc + s.total, 0);
-    if (livePeriodSales > 0) return livePeriodSales;
+    if (live || livePeriodSales > 0) return livePeriodSales;
     const baseByMonth: Record<string, number> = {
       '2026-10': 142800,
       '2026-09': 128450,
@@ -73,7 +73,7 @@ export const OverviewScreen: React.FC = () => {
       '2026-07': 108900,
     };
     return baseByMonth[periodCode] ?? 0;
-  }, [erpState.sales, periodCode]);
+  }, [erpState.sales, periodCode, live]);
 
   const currentPeriodRun = useMemo(
     () =>
@@ -133,6 +133,7 @@ export const OverviewScreen: React.FC = () => {
   );
 
   const chartSeries = useMemo(() => {
+    if (live) return { rows: [], maxVal: 1 };
     const liveNov = erpState.sales
       .filter((s) => s.status === 'COMPLETED')
       .reduce((a, s) => a + s.total, 0);
@@ -146,7 +147,7 @@ export const OverviewScreen: React.FC = () => {
     ];
     const maxVal = Math.max(...rows.map((r) => Math.max(r.sales, r.payroll)), 1);
     return { rows, maxVal };
-  }, [erpState.sales]);
+  }, [erpState.sales, live]);
 
   // Compute genuine period-over-period delta ONLY when historical prior-month value exists
   const salesDeltaPct = useMemo(() => {
@@ -204,7 +205,7 @@ export const OverviewScreen: React.FC = () => {
         targetScreen: 'inventory_alerts',
       });
     });
-    if (!openCashSession) {
+    if (!live && !openCashSession) {
       list.push({
         id: 'inc-cash-closed',
         periodCode,
@@ -220,14 +221,14 @@ export const OverviewScreen: React.FC = () => {
       });
     }
     return list;
-  }, [dashboardPeriod, periodCode, lowStockProducts, openCashSession]);
+  }, [dashboardPeriod, periodCode, lowStockProducts, openCashSession, live]);
 
   return (
     <div className="space-y-6">
       {/* Subtle Navy Gradient Executive Header */}
       <ErpPageHeader
         variant="hero"
-        eyebrow={`${erpState.company.name} · ${activeBranch?.name ?? ''}`}
+        eyebrow={activeBranch ? `${erpState.company.name} · ${activeBranch.name}` : erpState.company.name}
         title={locale === 'es' ? 'Panel operativo del negocio' : 'Business Operations Overview'}
         subtitle={
           locale === 'es'

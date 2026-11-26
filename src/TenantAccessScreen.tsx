@@ -1,5 +1,5 @@
 import { DataTable } from './netsrow-payroll/components/DataTable';
-import { ErpFilterBar, ErpModal, ErpPageHeader } from './netsrow-payroll/components/ErpUiPrimitives';
+import { ErpFilterBar, ErpModal } from './netsrow-payroll/components/ErpUiPrimitives';
 import { Plus } from 'lucide-react';
 import { PayrollWorkspaceProvider } from './netsrow-payroll/context/PayrollWorkspaceContext';
 import { usePlatform } from './netsrow-payroll/context/PlatformContext';
@@ -146,31 +146,31 @@ export function TenantAccessScreen({ locale = 'es', route, onNavigate }: TenantA
 
   return (
     <PayrollWorkspaceProvider
+      key={catalog.company.name}
       apiClient={previewClient}
-      loadPreviewData={false}
+      liveCompanyName={catalog.company.name}
       enableDemoRoleControl={false}
-      initialScreen="catalog_products"
+      initialScreen="overview"
       externalLocale={locale}
       externalTheme={platform.theme}
       onLocaleChange={platform.setLocale}
       onThemeChange={platform.setTheme}
       onLogout={busy ? undefined : () => void logout()}
     >
-      <NetsRowPayrollWorkspace companyName={catalog.company.name}
-        sessionError={error === 'logout' ? messages.logout : undefined} liveCatalog={
+      <NetsRowPayrollWorkspace
+        companyName={catalog.company.name}
+        sessionError={error === 'logout' ? messages.logout : undefined}
+        catalogActions={catalog.canManageCatalog && (
+          <button type="button" onClick={() => { setError(''); setProductModal(true); }}
+            className="nr-focus-ring nr-transition inline-flex items-center gap-1.5 h-10 px-4 rounded-lg bg-[var(--nr-primary)] hover:bg-[var(--nr-primary-hover)] text-xs font-semibold text-[var(--nr-primary-fg)]">
+            <Plus className="w-4 h-4" />{newProduct}
+          </button>
+        )}
+        liveCatalog={
         <div className="space-y-5">
-          <ErpPageHeader
-            title={es ? 'Catálogo' : 'Catalog'}
-            subtitle={catalog.canManageCatalog
-              ? (es ? 'Productos de tu empresa' : 'Company products')
-              : (es ? 'Productos de tu empresa · Solo lectura' : 'Company products · Read only')}
-            actions={catalog.canManageCatalog && (
-              <button type="button" onClick={() => { setError(''); setProductModal(true); }}
-                className="nr-focus-ring nr-transition inline-flex items-center gap-1.5 h-10 px-4 rounded-lg bg-[var(--nr-primary)] hover:bg-[var(--nr-primary-hover)] text-xs font-semibold text-[var(--nr-primary-fg)]">
-                <Plus className="w-4 h-4" />{newProduct}
-              </button>
-            )}
-          />
+          {!catalog.canManageCatalog && (
+            <p className="text-sm text-[var(--nr-text-secondary)]">{es ? 'Solo lectura' : 'Read only'}</p>
+          )}
           <ErpFilterBar
             searchValue={query}
             onSearchChange={setQuery}
