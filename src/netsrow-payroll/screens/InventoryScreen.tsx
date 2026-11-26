@@ -442,4 +442,3 @@ export const InventoryScreen: React.FC = () => {
     </div>
   );
 };
-

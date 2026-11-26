@@ -379,4 +379,3 @@ export const PurchasesScreen: React.FC = () => {
     </div>
   );
 };
-

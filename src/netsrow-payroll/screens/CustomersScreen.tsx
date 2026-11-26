@@ -474,4 +474,3 @@ export const CustomersScreen: React.FC = () => {
     </div>
   );
 };
-

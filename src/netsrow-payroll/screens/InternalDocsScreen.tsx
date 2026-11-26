@@ -239,4 +239,3 @@ export const InternalDocsScreen: React.FC = () => {
     </div>
   );
 };
-

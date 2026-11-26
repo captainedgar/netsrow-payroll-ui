@@ -369,4 +369,3 @@ export const SalesScreen: React.FC = () => {
     </div>
   );
 };
-

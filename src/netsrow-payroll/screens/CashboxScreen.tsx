@@ -719,4 +719,3 @@ export const CashboxScreen: React.FC = () => {
     </div>
   );
 };
-
