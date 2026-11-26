@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
-  ArrowRight,
   CheckCircle2,
   Moon,
   ShieldCheck,
@@ -10,7 +9,9 @@ import { AuthLoginForm } from '../components/AuthLoginForm';
 import { NetsRowLogo } from '../components/NetsRowLogo';
 import { usePlatform } from '../context/PlatformContext';
 
-export const TenantLoginScreen: React.FC = () => {
+type TenantLoginProps = Pick<React.ComponentProps<typeof AuthLoginForm>, 'serverLogin' | 'serverBusy' | 'serviceUnavailable'>;
+
+export const TenantLoginScreen: React.FC<TenantLoginProps> = (loginProps) => {
   const {
     locale,
     setLocale,
@@ -19,10 +20,6 @@ export const TenantLoginScreen: React.FC = () => {
     pt,
     navigateRoute,
   } = usePlatform();
-
-  const [viewMode, setViewMode] = useState<'login' | 'forgot'>('login');
-  const [recoveryEmail, setRecoveryEmail] = useState('');
-  const [recoverySent, setRecoverySent] = useState(false);
 
   return (
     <div
@@ -44,10 +41,6 @@ export const TenantLoginScreen: React.FC = () => {
               >
                 <NetsRowLogo size="xs" surface="auto" />
               </button>
-              <span aria-hidden="true">·</span>
-              <span className="text-[var(--nr-warning)] font-semibold">
-                {pt.auth.demoBanner}
-              </span>
             </div>
 
             <div className="flex items-center gap-2">
@@ -105,115 +98,22 @@ export const TenantLoginScreen: React.FC = () => {
 
           {/* Form container */}
           <div className="my-auto py-6 w-full max-w-md mx-auto space-y-6">
-            {viewMode === 'login' ? (
-              <>
-                <div>
-                  <h1 className="font-display text-2xl font-bold tracking-tight text-[var(--nr-text)]">
-                    {pt.auth.tenantLoginTitle}
-                  </h1>
-                  <p className="mt-1.5 text-xs sm:text-sm text-[var(--nr-text-secondary)]">
-                    {pt.auth.tenantLoginSubtitle}
-                  </p>
-                </div>
+            <div>
+              <h1 className="font-display text-2xl font-bold tracking-tight text-[var(--nr-text)]">
+                {pt.auth.tenantLoginTitle}
+              </h1>
+              <p className="mt-1.5 text-xs sm:text-sm text-[var(--nr-text-secondary)]">
+                {pt.auth.tenantLoginSubtitle}
+              </p>
+            </div>
 
-                <AuthLoginForm
-                  portal="TENANT"
-                  onAuthenticated={() => navigateRoute('/erp')}
-                  onForgotPasswordClick={() => {
-                    setRecoverySent(false);
-                    setViewMode('forgot');
-                  }}
-                />
-
-                <div className="pt-4 border-t border-[var(--nr-border)] flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
-                  <div className="flex flex-wrap items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => navigateRoute('/register')}
-                      className="nr-focus-ring font-semibold text-[var(--nr-primary)] hover:underline text-left rounded"
-                    >
-                      {pt.auth.goToRegister}
-                    </button>
-                    <span className="text-[var(--nr-border)]" aria-hidden="true">
-                      |
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => navigateRoute('/')}
-                      className="nr-focus-ring font-medium text-[var(--nr-text-secondary)] hover:text-[var(--nr-text)] hover:underline text-left rounded"
-                    >
-                      {locale === 'es' ? 'Ver web y planes' : 'View site & plans'}
-                    </button>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => navigateRoute('/platform/login')}
-                    className="nr-focus-ring inline-flex items-center gap-1 font-semibold text-[var(--nr-text)] hover:text-[var(--nr-primary)] rounded"
-                  >
-                    <span>{pt.auth.goToPlatformLogin}</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </>
-            ) : (
-              <div className="space-y-4">
-                <div>
-                  <h1 className="font-display text-xl font-bold text-[var(--nr-text)]">{pt.auth.forgotPasswordTitle}</h1>
-                  <p className="mt-1.5 text-xs text-[var(--nr-text-secondary)]">
-                    {pt.auth.forgotPasswordDesc}
-                  </p>
-                </div>
-
-                {recoverySent && (
-                  <div className="rounded-xl border border-[var(--nr-success-border)] bg-[var(--nr-success-bg)] p-3 text-xs text-[var(--nr-success)] flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 shrink-0" />
-                    <span>{pt.auth.forgotPasswordSent}</span>
-                  </div>
-                )}
-
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    if (recoveryEmail.trim()) setRecoverySent(true);
-                  }}
-                  className="space-y-3"
-                >
-                  <div>
-                    <label
-                      htmlFor="recovery-email"
-                      className="block text-xs font-semibold text-[var(--nr-text)] mb-1"
-                    >
-                      {pt.auth.emailLabel}
-                    </label>
-                    <input
-                      id="recovery-email"
-                      type="email"
-                      required
-                      value={recoveryEmail}
-                      onChange={(e) => setRecoveryEmail(e.target.value)}
-                      placeholder={pt.auth.emailPlaceholder}
-                      className="nr-focus-ring nr-transition w-full h-10 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-3 text-sm text-[var(--nr-text)]"
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    className="nr-focus-ring nr-transition w-full h-10 rounded-lg bg-[var(--nr-primary)] hover:bg-[var(--nr-primary-hover)] text-xs font-semibold text-[var(--nr-primary-fg)]"
-                  >
-                    {locale === 'es'
-                      ? 'Simular envío de recuperación'
-                      : 'Simulate recovery request'}
-                  </button>
-                </form>
-
-                <button
-                  type="button"
-                  onClick={() => setViewMode('login')}
-                  className="nr-focus-ring text-xs font-semibold text-[var(--nr-primary)] hover:underline rounded"
-                >
-                  {pt.auth.backToLogin}
-                </button>
-              </div>
-            )}
+            <AuthLoginForm portal="TENANT" onAuthenticated={() => navigateRoute('/erp')} {...loginProps} />
+            <div className="pt-4 border-t border-[var(--nr-border)] text-xs">
+              <button type="button" onClick={() => navigateRoute('/')}
+                className="nr-focus-ring font-medium text-[var(--nr-text-secondary)] hover:text-[var(--nr-text)] hover:underline rounded">
+                {locale === 'es' ? 'Ver web y planes' : 'View site & plans'}
+              </button>
+            </div>
           </div>
 
           <div className="pt-4 border-t border-[var(--nr-border)] text-[11px] text-[var(--nr-text-secondary)] flex flex-wrap items-center justify-between gap-2">

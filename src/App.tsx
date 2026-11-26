@@ -35,7 +35,7 @@ function parseAppRoute(pathname: string): AppRoutePath {
   const clean = pathname.replace(/\/+$/, '') || '/';
   if (clean === '/planes') return '/planes';
   if (clean === '/erp') return '/erp';
-  if (clean === '/login') return '/login';
+  if (clean === '/login' || (import.meta.env.DEV && clean === '/acceso-tecnico')) return '/login';
   if (clean === '/register') return '/register';
   if (clean === '/platform/login') return '/platform/login';
   if (clean === '/platform') return '/platform';
@@ -186,9 +186,6 @@ function PreviewApp() {
 }
 
 export default function App() {
-  if (import.meta.env.DEV && window.location.pathname === '/acceso-tecnico') {
-    return <TenantAccessScreen />;
-  }
   if (import.meta.env.DEV && window.location.pathname === '/base-tecnica') {
     return <FoundationScreen />;
   }

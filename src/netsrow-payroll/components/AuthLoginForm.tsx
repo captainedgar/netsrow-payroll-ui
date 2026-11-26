@@ -23,6 +23,9 @@ export interface AuthLoginFormProps {
   onAuthenticated: () => void;
   onForgotPasswordClick?: () => void;
   initialExpiredNotice?: boolean;
+  serverLogin?: (email: string, password: string) => Promise<'invalid' | 'unavailable' | null>;
+  serverBusy?: boolean;
+  serviceUnavailable?: boolean;
 }
 
 type AuthErrorKind =
@@ -37,6 +40,7 @@ export const AuthLoginForm: React.FC<AuthLoginFormProps> = ({
   onAuthenticated,
   onForgotPasswordClick,
   initialExpiredNotice = false,
+  serverLogin, serverBusy, serviceUnavailable,
 }) => {
   const {
     pt,
@@ -95,6 +99,12 @@ export const AuthLoginForm: React.FC<AuthLoginFormProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthErrorKind(null);
+
+    if (serverLogin) {
+      if (serverBusy || !validateFields()) return;
+      setAuthErrorKind(await serverLogin(email.trim(), password));
+      return;
+    }
 
     if (pendingToken && authorizedTenants.length > 0 && chosenTenantId) {
       try {
@@ -167,8 +177,10 @@ export const AuthLoginForm: React.FC<AuthLoginFormProps> = ({
     setAuthErrorKind('unavailable');
   };
 
+  const visibleError = authErrorKind ?? (serviceUnavailable ? 'unavailable' : null);
+
   const authErrorMessage = (() => {
-    switch (authErrorKind) {
+    switch (visibleError) {
       case 'unavailable':
         return pt.auth.errServiceUnavailable;
       case 'expired':
@@ -187,16 +199,16 @@ export const AuthLoginForm: React.FC<AuthLoginFormProps> = ({
   return (
     <div className="space-y-5">
       {/* Error banners */}
-      {authErrorKind && authErrorMessage && (
+      {visibleError && authErrorMessage && (
         <div
           role="alert"
           className={`rounded-xl border p-3 text-xs flex items-start gap-2.5 ${
-            authErrorKind === 'unavailable'
+            visibleError === 'unavailable'
               ? 'border-[var(--nr-warning-border)] bg-[var(--nr-warning-bg)] text-[var(--nr-warning)]'
               : 'border-[var(--nr-error-border)] bg-[var(--nr-error-bg)] text-[var(--nr-error)]'
           }`}
         >
-          {authErrorKind === 'unavailable' ? (
+          {visibleError === 'unavailable' ? (
             <WifiOff className="w-4 h-4 shrink-0 mt-0.5" />
           ) : (
             <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
@@ -381,10 +393,10 @@ export const AuthLoginForm: React.FC<AuthLoginFormProps> = ({
 
         <button
           type="submit"
-          disabled={isMutating}
+          disabled={serverLogin ? serverBusy : isMutating}
           className="nr-focus-ring nr-transition w-full h-10 rounded-lg bg-[var(--nr-primary)] hover:bg-[var(--nr-primary-hover)] disabled:opacity-60 text-sm font-semibold text-[var(--nr-primary-fg)] flex items-center justify-center gap-2"
         >
-          {isMutating ? (
+          {(serverLogin ? serverBusy : isMutating) ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin" />
               <span>{pt.auth.signingIn}</span>
@@ -404,7 +416,7 @@ export const AuthLoginForm: React.FC<AuthLoginFormProps> = ({
         </button>
       </form>
 
-      {/* Isolated Demo Controls (Not included in production builds) */}
+      {!serverLogin && (
       <div className="rounded-xl border border-[var(--nr-warning-border)] bg-[var(--nr-warning-bg)] p-3.5 space-y-3">
         <div className="flex items-start gap-2">
           <ShieldAlert className="w-4 h-4 text-[var(--nr-warning)] shrink-0 mt-0.5" />
@@ -460,6 +472,7 @@ export const AuthLoginForm: React.FC<AuthLoginFormProps> = ({
           </select>
         </div>
       </div>
+      )}
     </div>
   );
 };

@@ -45,7 +45,7 @@ interface NavGroupItem {
   subItems?: NavSubItem[];
 }
 
-export const SidebarNav: React.FC = () => {
+export const SidebarNav: React.FC<{ companyName?: string }> = ({ companyName }) => {
   const {
     activeScreen,
     activeReviewTab,
@@ -358,11 +358,11 @@ export const SidebarNav: React.FC = () => {
           >
             <div className="min-w-0">
               <div className="text-xs font-semibold text-white truncate">
-                {erpState.company.name}
+                {companyName ?? erpState.company.name}
               </div>
-              <div className="font-mono-num text-[10px] text-slate-400 truncate">
+              {!companyName && <div className="font-mono-num text-[10px] text-slate-400 truncate">
                 RNC {erpState.company.rnc}
-              </div>
+              </div>}
             </div>
             <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
           </button>
@@ -533,7 +533,7 @@ export const SidebarNav: React.FC = () => {
 
       {/* Bottom controls: Reset demo + Collapse */}
       <div className="p-2.5 border-t border-[#1A293D] space-y-1.5 shrink-0">
-        <button
+        {!companyName && <button
           type="button"
           disabled={isMutating}
           onClick={() => {
@@ -547,7 +547,7 @@ export const SidebarNav: React.FC = () => {
         >
           <RotateCcw className="w-3.5 h-3.5 shrink-0" />
           {!compact && <span className="truncate">{t.topBar.resetDemoData}</span>}
-        </button>
+        </button>}
 
         {!mobile && (
           <button

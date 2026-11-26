@@ -13,7 +13,7 @@ import {
 import { usePayrollWorkspace } from '../context/PayrollWorkspaceContext';
 import { DemoRoleKey } from '../types/payroll';
 
-export const TopBar: React.FC = () => {
+export const TopBar: React.FC<{ companyName?: string }> = ({ companyName }) => {
   const {
     periods,
     activePeriodId,
@@ -44,14 +44,14 @@ export const TopBar: React.FC = () => {
     onLogout,
   } = usePayrollWorkspace();
 
-  const isPayrollScreen =
+  const isPayrollScreen = !companyName && (
     activeScreen === 'periods' ||
     activeScreen === 'employees' ||
     activeScreen === 'novelties' ||
     activeScreen === 'payroll_review' ||
     activeScreen === 'run_history' ||
     activeScreen === 'work_risk' ||
-    activeScreen === 'concept_treatment';
+    activeScreen === 'concept_treatment');
 
   const statusBannerText = (() => {
     if (!activePeriod) return t.topBar.noPeriodSelected;
@@ -105,15 +105,15 @@ export const TopBar: React.FC = () => {
           >
             <Building2 className="w-3.5 h-3.5 text-[var(--nr-primary)] shrink-0" />
             <span className="font-semibold text-[var(--nr-text)] whitespace-nowrap">
-              {erpState.company.name}
+              {companyName ?? erpState.company.name}
             </span>
-            <span className="font-mono-num text-[11px] text-[var(--nr-text-secondary)] whitespace-nowrap">
+            {!companyName && <span className="font-mono-num text-[11px] text-[var(--nr-text-secondary)] whitespace-nowrap">
               · {erpState.company.rnc}
-            </span>
+            </span>}
           </button>
 
           {/* Live Active Branch Selector (synced immediately when renamed in Sucursales) */}
-          <div className="flex items-center gap-1.5 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-2.5 py-1 text-xs h-8">
+          {!companyName && <div className="flex items-center gap-1.5 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-2.5 py-1 text-xs h-8">
             <Store className="w-3.5 h-3.5 text-[var(--nr-primary)] shrink-0" />
             <select
               aria-label={t.topBar.branchLabel}
@@ -135,7 +135,7 @@ export const TopBar: React.FC = () => {
                   </option>
                 ))}
             </select>
-          </div>
+          </div>}
 
           {/* Active payroll status pill (when Payroll module enabled) */}
           {isPayrollScreen && enabledModules.includes('PAYROLL') && (
@@ -174,7 +174,7 @@ export const TopBar: React.FC = () => {
 
         {/* Right zone: Reset Demo + ES/EN + Theme + Demo Role Switcher + User + Mobile Breakdown */}
         <div className="flex items-center gap-2 flex-wrap">
-          <button
+          {!companyName && <button
             type="button"
             disabled={isMutating}
             onClick={() => resetDemoData()}
@@ -183,7 +183,7 @@ export const TopBar: React.FC = () => {
           >
             <RotateCcw className="w-3.5 h-3.5 text-[var(--nr-warning)]" />
             <span className="hidden 2xl:inline">{t.topBar.resetDemoData}</span>
-          </button>
+          </button>}
 
           {/* Segmented ES | EN */}
           <div
@@ -268,13 +268,13 @@ export const TopBar: React.FC = () => {
           <div className="hidden md:flex items-center gap-2 pl-2 border-l border-[var(--nr-border)]">
             <div className="text-right leading-tight">
               <div className="text-xs font-semibold text-[var(--nr-text)] whitespace-nowrap">
-                {actorName}
+                {companyName ?? actorName}
               </div>
-              <div className="text-[10px] text-[var(--nr-text-secondary)] whitespace-nowrap">
+              {!companyName && <div className="text-[10px] text-[var(--nr-text-secondary)] whitespace-nowrap">
                 {demoRole === 'payroll_admin'
                   ? t.topBar.roleTitleAdmin
                   : t.topBar.roleTitleSupervisor}
-              </div>
+              </div>}
             </div>
             <div className="w-8 h-8 rounded-full bg-[#081321] dark:bg-[var(--nr-primary)] text-white dark:text-[var(--nr-primary-fg)] text-xs font-bold flex items-center justify-center shrink-0">
               {initials}

@@ -325,6 +325,7 @@ export interface PayrollWorkspaceProviderProps {
   sessionPermissions?: NetsRowPermissions;
   sessionActorName?: string;
   enableDemoRoleControl?: boolean;
+  loadPreviewData?: boolean;
   initialScreen?: ScreenId;
   initialLocale?: Locale;
   initialTheme?: ThemeMode;
@@ -344,6 +345,7 @@ export function PayrollWorkspaceProvider({
   sessionPermissions,
   sessionActorName,
   enableDemoRoleControl = true,
+  loadPreviewData = true,
   initialScreen = 'overview',
   initialLocale = 'es',
   initialTheme = 'light',
@@ -462,6 +464,7 @@ export function PayrollWorkspaceProvider({
   }, []);
 
   useEffect(() => {
+    if (!loadPreviewData) return;
     let cancelled = false;
     setIsLoading(true);
     apiClient
@@ -499,7 +502,7 @@ export function PayrollWorkspaceProvider({
     return () => {
       cancelled = true;
     };
-  }, [apiClient]);
+  }, [apiClient, loadPreviewData]);
 
   const persistErp = useCallback(
     async (updater: (prev: ErpDemoState) => ErpDemoState): Promise<ErpDemoState> => {

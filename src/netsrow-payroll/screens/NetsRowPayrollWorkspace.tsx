@@ -37,7 +37,13 @@ import { SettingsScreen } from './SettingsScreen';
  * Scoped class (.netsrow-payroll-shell + conditional .dark) keeps themes isolated
  * without leaking global CSS rules across external Next.js shells.
  */
-export const NetsRowPayrollWorkspace: React.FC = () => {
+type WorkspaceProps = {
+  companyName?: string;
+  liveCatalog?: React.ReactNode;
+  sessionError?: string;
+};
+
+export const NetsRowPayrollWorkspace: React.FC<WorkspaceProps> = ({ companyName, liveCatalog, sessionError }) => {
   const {
     activeScreen,
     setActiveScreen,
@@ -82,6 +88,20 @@ export const NetsRowPayrollWorkspace: React.FC = () => {
         : null;
 
   const renderScreen = () => {
+    if (companyName) {
+      if (['overview', 'catalog', 'catalog_products'].includes(activeScreen)) return liveCatalog;
+      return (
+        <div className="rounded-xl border border-[var(--nr-border)] bg-[var(--nr-surface)] p-6 space-y-4">
+          <h1 className="font-display text-lg font-bold">
+            {locale === 'es' ? 'Sección aún no disponible' : 'Section not available yet'}
+          </h1>
+          <button type="button" onClick={() => setActiveScreen('catalog_products')}
+            className="nr-focus-ring text-[var(--nr-primary)] underline rounded">
+            {locale === 'es' ? 'Ir al catálogo' : 'Go to catalog'}
+          </button>
+        </div>
+      );
+    }
     if (tenantStatus === 'SUSPENDED') {
       return (
         <div className="max-w-lg mx-auto my-12 rounded-2xl border border-[var(--nr-error-border)] bg-[var(--nr-surface)] p-6 sm:p-8 text-center space-y-4">
@@ -236,14 +256,19 @@ export const NetsRowPayrollWorkspace: React.FC = () => {
         theme === 'dark' ? 'dark' : ''
       }`}
     >
-      <SidebarNav />
+      <SidebarNav companyName={companyName} />
 
       <div className="flex-1 flex flex-col min-w-0">
-        <TopBar />
+        <TopBar companyName={companyName} />
 
         <div className="flex-1 flex min-w-0">
           <main className="flex-1 min-w-0 p-4 sm:p-6">
-            {errorMessage && (
+            {sessionError && (
+              <p role="alert" className="mb-4 rounded-xl border border-[var(--nr-error-border)] bg-[var(--nr-error-bg)] px-4 py-3 text-xs text-[var(--nr-error)]">
+                {sessionError}
+              </p>
+            )}
+            {!companyName && errorMessage && (
               <div
                 role="alert"
                 className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-[var(--nr-error-border)] bg-[var(--nr-error-bg)] px-4 py-3 text-xs text-[var(--nr-error)]"
@@ -262,7 +287,7 @@ export const NetsRowPayrollWorkspace: React.FC = () => {
               </div>
             )}
 
-            {successMessage && (
+            {!companyName && successMessage && (
               <div
                 role="status"
                 className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-[var(--nr-success-border)] bg-[var(--nr-success-bg)] px-4 py-3 text-xs text-[var(--nr-success)]"
@@ -285,7 +310,7 @@ export const NetsRowPayrollWorkspace: React.FC = () => {
           </main>
 
           {/* Persistent «Desglose de nómina» inspector on active Payroll routes when PAYROLL is contracted */}
-          {payrollEnabled &&
+          {!companyName && payrollEnabled &&
             tenantStatus !== 'SUSPENDED' &&
             (activeScreen === 'payroll_review' ||
               activeScreen === 'employees' ||

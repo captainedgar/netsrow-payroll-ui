@@ -1,4 +1,12 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { DataTable } from './netsrow-payroll/components/DataTable';
+import { ErpFilterBar, ErpModal, ErpPageHeader } from './netsrow-payroll/components/ErpUiPrimitives';
+import { Plus } from 'lucide-react';
+import { PayrollWorkspaceProvider } from './netsrow-payroll/context/PayrollWorkspaceContext';
+import { usePlatform } from './netsrow-payroll/context/PlatformContext';
+import { NetsRowPayrollWorkspace } from './netsrow-payroll/screens/NetsRowPayrollWorkspace';
+import { TenantLoginScreen } from './netsrow-payroll/screens/TenantLoginScreen';
+import { MockPayrollClient } from './netsrow-payroll/services/mockPayrollClient';
+import { useEffect, useState, useMemo, type FormEvent } from 'react';
 
 type Product = { id: string; name: string };
 type Catalog = { company: { name: string }; products: Product[]; canManageCatalog: boolean };
@@ -14,7 +22,11 @@ export function TenantAccessScreen({ locale = 'es', route, onNavigate }: TenantA
   const [catalog, setCatalog] = useState<Catalog | null>(null);
   const [busy, setBusy] = useState(true);
   const [ready, setReady] = useState(false);
-  const [error, setError] = useState<'catalog' | 'credentials' | 'login' | 'logout' | 'create' | 'permission' | ''>('');
+  const [query, setQuery] = useState('');
+  const [productModal, setProductModal] = useState(false);
+  const previewClient = useMemo(() => new MockPayrollClient(), []);
+  const platform = usePlatform();
+  const [error, setError] = useState<'catalog' | 'logout' | 'create' | 'permission' | ''>('');
 
   async function fetchCatalog(signal?: AbortSignal) {
     const response = await fetch('/api/tenant/catalog', { signal });
@@ -38,27 +50,25 @@ export function TenantAccessScreen({ locale = 'es', route, onNavigate }: TenantA
     if (!catalog && route === '/erp') onNavigate('/login');
   }, [busy, catalog, error, onNavigate, route]);
 
-  async function login(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const fields = new FormData(event.currentTarget);
+  async function login(email: string, password: string) {
     setBusy(true);
     setError('');
     try {
       const response = await fetch('/api/tenant/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-Netsrow-Client': 'web' },
-        body: JSON.stringify({ email: fields.get('email'), password: fields.get('password') }),
+        body: JSON.stringify({ email, password }),
       });
       if (response.status === 401) {
-        setError('credentials');
-        return;
+        return 'invalid' as const;
       }
       if (!response.ok) throw new Error('login');
       const data = await fetchCatalog();
       if (!data) throw new Error('session');
       setCatalog(data);
+      return null;
     } catch {
-      setError('login');
+      return 'unavailable' as const;
     } finally {
       setBusy(false);
     }
@@ -82,6 +92,7 @@ export function TenantAccessScreen({ locale = 'es', route, onNavigate }: TenantA
       });
       if (response.status === 401) {
         setCatalog(null);
+        setProductModal(false);
         return;
       }
       if (response.status === 403) {
@@ -92,6 +103,8 @@ export function TenantAccessScreen({ locale = 'es', route, onNavigate }: TenantA
       const product = (await response.json()) as Product;
       setCatalog((current) => current && { ...current, products: [product, ...current.products] });
       form.reset();
+      setQuery('');
+      setProductModal(false);
     } catch {
       setError('create');
     } finally {
@@ -108,6 +121,8 @@ export function TenantAccessScreen({ locale = 'es', route, onNavigate }: TenantA
       });
       if (!response.ok) throw new Error('logout');
       setCatalog(null);
+      setProductModal(false);
+      setQuery('');
     } catch {
       setError('logout');
     } finally {
@@ -116,59 +131,78 @@ export function TenantAccessScreen({ locale = 'es', route, onNavigate }: TenantA
   }
 
   const messages = {
-    catalog: es ? 'No se pudo consultar la API.' : 'Could not reach the API.',
-    credentials: es ? 'Correo o contraseña incorrectos.' : 'Invalid email or password.',
-    login: es ? 'No se pudo iniciar sesión o consultar el catálogo.' : 'Could not sign in or load the catalog.',
     create: es ? 'No se pudo guardar el producto. Verifica el nombre.' : 'Could not save the product. Check its name.',
     permission: es ? 'Tu cuenta no puede registrar productos.' : 'Your account cannot add products.',
     logout: es ? 'No se pudo cerrar la sesión. Intenta de nuevo.' : 'Could not sign out. Try again.',
   };
 
+  if (route !== '/erp' || !catalog) {
+    return <TenantLoginScreen serverLogin={login} serverBusy={busy || !ready} serviceUnavailable={error === 'catalog'} />;
+  }
+
+  const newProduct = es ? 'Nuevo producto' : 'New product';
+  const productName = es ? 'Nombre del producto' : 'Product name';
+  const rows = catalog.products.filter((item) => item.name.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()));
+
   return (
-    <main className="mx-auto max-w-lg px-5 py-12 text-slate-900 dark:text-slate-100">
-      <a href="/" className="text-emerald-800 dark:text-emerald-300 underline">NetsRow ERP</a>
-      <h1 className="mt-6 text-3xl font-bold">{catalog ? catalog.company.name : es ? 'Acceso a tu empresa' : 'Sign in to your company'}</h1>
-      <p className="mt-2 text-slate-600 dark:text-slate-300">
-        {catalog
-          ? (catalog.canManageCatalog
-            ? (es ? 'Catálogo de tu empresa' : 'Company catalog')
-            : (es ? 'Catálogo de tu empresa · Solo lectura' : 'Company catalog · Read only'))
-          : (es ? 'Ingresa con la cuenta de tu empresa.' : 'Enter your company account credentials.')}
-      </p>
-      {error && <p role="alert" className="mt-4 text-red-800 dark:text-red-300">{messages[error]}</p>}
-      {busy && <p role="status" className="mt-4">{es ? 'Procesando…' : 'Loading…'}</p>}
-      {catalog ? (
-        <>
-          {catalog.canManageCatalog && route === '/erp' && (
-            <form onSubmit={createProduct} className="mt-6 grid gap-3 rounded-xl border border-slate-200 p-4 dark:border-slate-700">
-              <label className="grid gap-1">
-                {es ? 'Nombre del producto' : 'Product name'}
-                <input name="name" required maxLength={120} className="rounded-lg border p-2 dark:border-slate-600 dark:bg-slate-800" />
+    <PayrollWorkspaceProvider
+      apiClient={previewClient}
+      loadPreviewData={false}
+      enableDemoRoleControl={false}
+      initialScreen="catalog_products"
+      externalLocale={locale}
+      externalTheme={platform.theme}
+      onLocaleChange={platform.setLocale}
+      onThemeChange={platform.setTheme}
+      onLogout={busy ? undefined : () => void logout()}
+    >
+      <NetsRowPayrollWorkspace companyName={catalog.company.name}
+        sessionError={error === 'logout' ? messages.logout : undefined} liveCatalog={
+        <div className="space-y-5">
+          <ErpPageHeader
+            title={es ? 'Catálogo' : 'Catalog'}
+            subtitle={catalog.canManageCatalog
+              ? (es ? 'Productos de tu empresa' : 'Company products')
+              : (es ? 'Productos de tu empresa · Solo lectura' : 'Company products · Read only')}
+            actions={catalog.canManageCatalog && (
+              <button type="button" onClick={() => { setError(''); setProductModal(true); }}
+                className="nr-focus-ring nr-transition inline-flex items-center gap-1.5 h-10 px-4 rounded-lg bg-[var(--nr-primary)] hover:bg-[var(--nr-primary-hover)] text-xs font-semibold text-[var(--nr-primary-fg)]">
+                <Plus className="w-4 h-4" />{newProduct}
+              </button>
+            )}
+          />
+          <ErpFilterBar
+            searchValue={query}
+            onSearchChange={setQuery}
+            searchPlaceholder={es ? 'Buscar por nombre…' : 'Search by name…'}
+            hasActiveFilters={Boolean(query)}
+            activeFilterCount={query ? 1 : 0}
+            clearLabel={es ? 'Limpiar' : 'Clear'}
+            onClearFilters={() => setQuery('')}
+          />
+          <DataTable rows={rows} getRowKey={(item) => item.id}
+            columns={[{ key: 'name', header: productName, render: (item) => item.name }]}
+            emptyMessage={es ? 'No hay productos.' : 'No products.'}
+          />
+          <ErpModal open={productModal} onClose={() => setProductModal(false)} title={newProduct}
+            maxWidthClass="max-w-lg" closeLabel={es ? 'Cancelar' : 'Cancel'}>
+            <form onSubmit={createProduct} className="space-y-3">
+              {(error === 'create' || error === 'permission') && (
+                <p role="alert" className="text-[var(--nr-error)]">{messages[error]}</p>
+              )}
+              <label className="grid gap-1 text-xs font-semibold">
+                {productName}
+                <input name="name" required maxLength={120}
+                  className="nr-focus-ring h-10 rounded-lg border border-[var(--nr-border)] bg-[var(--nr-surface-elevated)] px-3 text-sm" />
               </label>
-              <button type="submit" disabled={busy} className="rounded-lg bg-emerald-700 px-4 py-2 text-white disabled:opacity-60">
+              <button type="submit" disabled={busy}
+                className="nr-focus-ring nr-transition h-10 px-4 rounded-lg bg-[var(--nr-primary)] text-xs font-semibold text-[var(--nr-primary-fg)] disabled:opacity-60">
                 {es ? 'Registrar producto' : 'Add product'}
               </button>
             </form>
-          )}
-          <ul className="mt-5 space-y-2">
-            {catalog.products.map((product) => (
-              <li key={product.id} className="rounded-lg border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 p-3">{product.name}</li>
-            ))}
-          </ul>
-          {!catalog.products.length && <p className="mt-4">{es ? 'No hay productos.' : 'No products.'}</p>}
-          <button type="button" disabled={busy} onClick={() => void logout()} className="mt-5 rounded-lg bg-slate-900 px-4 py-2 text-white">{es ? 'Cerrar sesión' : 'Sign out'}</button>
-        </>
-      ) : (
-        <form onSubmit={login} className="mt-6 grid gap-4 rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 p-5">
-          <label className="grid gap-1">{es ? 'Correo' : 'Email'}
-            <input name="email" type="email" autoComplete="username" required maxLength={254} className="rounded-lg border p-2 dark:border-slate-600 dark:bg-slate-800" />
-          </label>
-          <label className="grid gap-1">{es ? 'Contraseña' : 'Password'}
-            <input name="password" type="password" autoComplete="current-password" required maxLength={256} className="rounded-lg border p-2 dark:border-slate-600 dark:bg-slate-800" />
-          </label>
-          <button disabled={busy} className="rounded-lg bg-emerald-700 px-4 py-2 text-white">{es ? 'Iniciar sesión' : 'Sign in'}</button>
-        </form>
-      )}
-    </main>
+          </ErpModal>
+        </div>
+      } />
+    </PayrollWorkspaceProvider>
   );
 }
